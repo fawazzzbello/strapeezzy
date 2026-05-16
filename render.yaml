@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: strapeezzy-api
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: PORT
+        value: 8000
+      # Add your secrets in the Render dashboard:
+      # JWT_SECRET, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET,
+      # BREVO_SMTP_USER, BREVO_SMTP_PASS,
+      # TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER
