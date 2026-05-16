@@ -80,6 +80,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ── PERFORMANCE MIDDLEWARE ──
+from fastapi.middleware.gzip import GZipMiddleware
+
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+@app.middleware("http")
+async def add_performance_headers(request: Request, call_next):
+    response = await call_next(request)
+    # Enable compression and caching
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Cache-Control"] = "public, max-age=3600"
+    # For API responses, cache for 5 minutes
+    if request.url.path.startswith("/api/"):
+        response.headers["Cache-Control"] = "public, max-age=300"
+    return response
+
 # ── ROUTERS ──
 from app.routes.auth import router as auth_router
 from app.routes.waitlist import router as waitlist_router
