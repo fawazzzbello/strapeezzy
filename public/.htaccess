@@ -1,0 +1,33 @@
+# Enable GZIP compression
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
+  AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+# Cache images for 1 year (long-lived assets)
+<FilesMatch "\.(jpg|jpeg|png|webp|gif|ico)$">
+  Header set Cache-Control "max-age=31536000, public"
+</FilesMatch>
+
+# Cache CSS/JS for 1 month
+<FilesMatch "\.(css|js)$">
+  Header set Cache-Control "max-age=2592000, public"
+</FilesMatch>
+
+# Cache HTML for 1 day
+<FilesMatch "\.html$">
+  Header set Cache-Control "max-age=86400, must-revalidate"
+</FilesMatch>
+
+# Enable ETags
+FileETag INode MTime Size
+
+# Redirect to index.html for SPA
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>
