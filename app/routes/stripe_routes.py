@@ -33,7 +33,7 @@ async def create_payment_intent(request: Request, body: PaymentIntentCreate, db:
             currency="gbp",
             automatic_payment_methods={"enabled": True},
             receipt_email=body.customer_email,
-            description=f"Strapeezzy Pioneer Strap — {body.product_name}",
+            description=f"Lidle-By-Lidle Product — {body.product_name}",
             metadata={
                 "product_name": body.product_name,
                 "product_colorway": product.colorway or "",
@@ -55,3 +55,46 @@ async def get_publishable_key():
     if not pk or pk.startswith("pk_test_YOUR"):
         return {"key": None, "configured": False}
     return {"key": pk, "configured": True}
+
+
+@router.get("/health")
+async def stripe_health():
+    """Check Stripe API configuration and connectivity."""
+    sk = os.getenv("STRIPE_SECRET_KEY", "")
+    pk = os.getenv("STRIPE_PUBLISHABLE_KEY", "")
+
+    if not sk or sk.startswith("sk_test_YOUR"):
+        return {
+            "status": "unconfigured",
+            "message": "Stripe secret key not configured",
+            "secret_configured": False,
+            "publishable_configured": False,
+        }
+
+    if not pk or pk.startswith("pk_test_YOUR"):
+        return {
+            "status": "partially_configured",
+            "message": "Stripe publishable key not configured",
+            "secret_configured": True,
+            "publishable_configured": False,
+        }
+
+    try:
+        stripe.api_key = sk
+        account = stripe.Account.retrieve()
+        return {
+            "status": "ok",
+            "message": "Stripe is properly configured and connected",
+            "secret_configured": True,
+            "publishable_configured": True,
+            "account_id": account.id,
+            "account_email": account.email,
+        }
+    except stripe.StripeError as e:
+        return {
+            "status": "error",
+            "message": f"Stripe API error: {str(e)}",
+            "secret_configured": True,
+            "publishable_configured": True,
+            "error": str(e),
+        }

@@ -108,12 +108,26 @@ async def add_performance_headers(request: Request, call_next):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-XSS-Protection"] = "1; mode=block"
-    response.headers["Cache-Control"] = "public, max-age=3600"
+
+    path = request.url.path
+
     # API responses must never be cached so admin edits are reflected immediately
-    if request.url.path.startswith("/api/"):
+    if path.startswith("/api/"):
         response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
+    # HTML files should never be cached to ensure config changes reflect instantly
+    elif path.endswith(".html") or path == "/" or path == "/admin" or path.endswith("/"):
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    # Images, fonts can be cached for longer
+    elif any(path.endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".woff", ".woff2", ".ttf"]):
+        response.headers["Cache-Control"] = "public, max-age=86400"  # 24 hours
+    # Default: moderate cache for other static assets
+    else:
+        response.headers["Cache-Control"] = "public, max-age=3600"  # 1 hour
+
     return response
 
 # ── ROUTERS ──

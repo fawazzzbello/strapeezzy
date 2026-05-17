@@ -392,7 +392,7 @@ async def fulfill_order(
             subject, html = template_shipping_confirm(od)
             await send_email(od["customer_email"], od["customer_name"], subject, html)
             if od.get("customer_phone"):
-                msg = (f"📦 Your Strapeezzy order {od['order_number']} has shipped!"
+                msg = (f"📦 Your Lidle-By-Lidle order {od['order_number']} has shipped!"
                        f" Track: {od.get('tracking_url') or od.get('tracking_number') or 'check email'}")
                 await send_sms(od["customer_phone"], msg)
         background.add_task(_notify)
@@ -503,7 +503,7 @@ async def stripe_sync(
                     customer_email=meta.get("customer_email") or "",
                     customer_phone=meta.get("customer_phone") or "",
                     shipping_address=meta.get("shipping_address") or "",
-                    product_name=meta.get("product_name") or "Pioneer Strap",
+                    product_name=meta.get("product_name") or "Product",
                     product_variant=meta.get("product_colorway") or meta.get("product_variant") or "",
                     quantity=1,
                     unit_price=pi["amount"],
