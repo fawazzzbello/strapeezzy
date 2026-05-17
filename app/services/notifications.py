@@ -15,8 +15,8 @@ BREVO_PORT = int(os.getenv("BREVO_SMTP_PORT", "587"))
 # Accept either BREVO_SMTP_USER or BREVO_USER (and same for pass)
 BREVO_USER = os.getenv("BREVO_SMTP_USER") or os.getenv("BREVO_USER", "")
 BREVO_PASS = os.getenv("BREVO_SMTP_PASS") or os.getenv("BREVO_PASS", "")
-FROM_EMAIL = os.getenv("FROM_EMAIL", "hello@strapeezzy.com")
-FROM_NAME = os.getenv("FROM_NAME", "Strapeezzy")
+FROM_EMAIL = os.getenv("FROM_EMAIL", "hello@lidle.com")
+FROM_NAME = os.getenv("FROM_NAME", "Lidle-By-Lidle")
 
 if BREVO_USER:
     logger.info(f"[EMAIL] Brevo configured: {BREVO_USER[:6]}*** → {FROM_EMAIL}")
@@ -39,7 +39,7 @@ def _base_layout(content: str, accent: str = "#F5C600") -> str:
         </div>
         <div style="padding:36px;">{content}</div>
         <div style="padding:20px 36px;border-top:1px solid #E0D8CF;font-size:11px;color:#999;">
-          © 2026 Strapeezzy · <a href="https://strapeezzy.com" style="color:#999;">strapeezzy.com</a>
+          © 2026 Lidle-By-Lidle · <a href="https://lidle.com" style="color:#999;">lidle.com</a>
         </div>
       </div>
     </body></html>"""

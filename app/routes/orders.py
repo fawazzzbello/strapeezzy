@@ -384,7 +384,7 @@ async def fulfill_order(
             subject, html = template_shipping_confirm(od)
             await send_email(od["customer_email"], od["customer_name"], subject, html)
             if od.get("customer_phone"):
-                msg = (f"📦 Your Strapeezzy order {od['order_number']} has shipped!"
+                msg = (f"📦 Your Lidle-By-Lidle order {od['order_number']} has shipped!"
                        f" Track: {od.get('tracking_url') or od.get('tracking_number') or 'check email'}")
                 await send_sms(od["customer_phone"], msg)
         background.add_task(_notify)

@@ -33,7 +33,7 @@ async def create_payment_intent(request: Request, body: PaymentIntentCreate, db:
             currency="gbp",
             automatic_payment_methods={"enabled": True},
             receipt_email=body.customer_email,
-            description=f"Strapeezzy Pioneer Strap — {body.product_name}",
+            description=f"Lidle-By-Lidle Product — {body.product_name}",
             metadata={
                 "product_name": body.product_name,
                 "product_colorway": product.colorway or "",

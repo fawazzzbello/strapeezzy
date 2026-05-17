@@ -71,7 +71,7 @@ async def join_waitlist(request: Request, body: WaitlistJoin, background: Backgr
         if body.notify_sms and body.phone:
             await send_sms(
                 body.phone,
-                f"🎉 You're #{position} on the Strapeezzy waitlist! We'll text when Pioneer straps go live. strapeezzy.com"
+                f"🎉 You're #{position} on the Lidle-By-Lidle waitlist! We'll text when Pioneer straps go live. lidle.com"
             )
 
     background.add_task(_notify)
@@ -195,7 +195,7 @@ async def notify_all(
                 sent += 1
             if r.get("notify_sms") and r.get("phone"):
                 await send_sms(r["phone"],
-                    f"🚨 Strapeezzy is LIVE! Pioneer straps for the AP × Swatch Royalpop. Shop: {shop_url}")
+                    f"🚨 Lidle-By-Lidle is LIVE! Pioneer straps for the AP × Swatch Royalpop. Shop: {shop_url}")
                 sms_sent += 1
             await asyncio.sleep(0.12)
 
@@ -232,7 +232,7 @@ async def export_waitlist(
     return Response(
         content=buf.getvalue(),
         media_type="text/csv",
-        headers={"Content-Disposition": 'attachment; filename="strapeezzy-waitlist.csv"'},
+        headers={"Content-Disposition": 'attachment; filename="lidle-waitlist.csv"'},
     )
 
 

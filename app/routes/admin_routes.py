@@ -80,7 +80,7 @@ DEFAULT_CONFIG = {
     "waitlist_count": "0",
     "maillist_count": "0",
     "launch_date": "2026-07-01",
-    "site_title": "Strapeezzy — Pioneer Straps for the AP × Swatch Royalpop",
+    "site_title": "Lidle-By-Lidle — Personal Shopper Store",
     "hero_headline_line1": "STRAP",
     "hero_headline_line2": "YOUR",
     "hero_headline_line3": "VIBE.",
@@ -133,7 +133,7 @@ async def get_config_public(db: Session = Depends(get_db)):
     """Public endpoint for landing page to fetch site config"""
     cfg = get_all_config(db)
     return {
-        "site_title": cfg.get("site_title", "Strapeezzy"),
+        "site_title": cfg.get("site_title", "Lidle-By-Lidle"),
         "hero_headline_line1": cfg.get("hero_headline_line1", "STRAP"),
         "hero_headline_line2": cfg.get("hero_headline_line2", "YOUR"),
         "hero_headline_line3": cfg.get("hero_headline_line3", "VIBE."),

@@ -1,4 +1,4 @@
-# main.py — Strapeezzy FastAPI Backend
+# main.py — Lidle-By-Lidle FastAPI Backend
 import os
 import json
 import random
@@ -197,8 +197,8 @@ async def health():
 @app.post("/api/init-admin", include_in_schema=False)
 async def init_admin(
     username: str = "admin",
-    password: str = "strapeezzy2024!",
-    email: str = "admin@strapeezzy.com",
+    password: str = "lidle2024!",
+    email: str = "admin@lidle.com",
 ):
     db = SessionLocal()
     try:
