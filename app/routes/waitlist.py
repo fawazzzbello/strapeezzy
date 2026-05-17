@@ -71,7 +71,7 @@ async def join_waitlist(request: Request, body: WaitlistJoin, background: Backgr
         if body.notify_sms and body.phone:
             await send_sms(
                 body.phone,
-                f"🎉 You're #{position} on the Lidle-By-Lidle waitlist! We'll text when Pioneer straps go live. lidle.com"
+                f"🎉 You're #{position} on the Lidle-By-Lidle waitlist! We'll text when we have exclusive deals. lidle.com"
             )
 
     background.add_task(_notify)
@@ -195,7 +195,7 @@ async def notify_all(
                 sent += 1
             if r.get("notify_sms") and r.get("phone"):
                 await send_sms(r["phone"],
-                    f"🚨 Lidle-By-Lidle is LIVE! Pioneer straps for the AP × Swatch Royalpop. Shop: {shop_url}")
+                    f"🚨 Lidle-By-Lidle is LIVE! Personal shopping with premium deals. Shop: {shop_url}")
                 sms_sent += 1
             await asyncio.sleep(0.12)
 
