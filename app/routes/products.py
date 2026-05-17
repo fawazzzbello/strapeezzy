@@ -103,7 +103,8 @@ async def create_product(
         raise HTTPException(status_code=400, detail="SKU already exists")
 
     if file:
-        filename = f"{sku.lower()}-{os.path.basename(file.filename.replace('\\', '/'))}"
+        _fname = os.path.basename(file.filename.replace('\\', '/'))
+        filename = f"{sku.lower()}-{_fname}"
         filepath = os.path.join(UPLOAD_DIR, filename)
         try:
             with open(filepath, "wb") as f:
@@ -114,7 +115,8 @@ async def create_product(
             raise HTTPException(status_code=500, detail=f"Failed to save image: {str(e)}")
 
     if file2:
-        filename2 = f"{sku.lower()}-2-{os.path.basename(file2.filename.replace('\\', '/'))}"
+        _fname2 = os.path.basename(file2.filename.replace('\\', '/'))
+        filename2 = f"{sku.lower()}-2-{_fname2}"
         filepath2 = os.path.join(UPLOAD_DIR, filename2)
         try:
             with open(filepath2, "wb") as f:
@@ -200,7 +202,8 @@ async def update_product(
         updates["image_url_2"] = image_url_2
 
     if file:
-        filename = f"{product.sku.lower()}-{os.path.basename(file.filename.replace('\\', '/'))}"
+        _fname = os.path.basename(file.filename.replace('\\', '/'))
+        filename = f"{product.sku.lower()}-{_fname}"
         filepath = os.path.join(UPLOAD_DIR, filename)
         try:
             with open(filepath, "wb") as f:
@@ -212,7 +215,8 @@ async def update_product(
             raise HTTPException(status_code=500, detail=f"Failed to save image: {str(e)}")
 
     if file2:
-        filename2 = f"{product.sku.lower()}-2-{os.path.basename(file2.filename.replace('\\', '/'))}"
+        _fname2 = os.path.basename(file2.filename.replace('\\', '/'))
+        filename2 = f"{product.sku.lower()}-2-{_fname2}"
         filepath2 = os.path.join(UPLOAD_DIR, filename2)
         try:
             with open(filepath2, "wb") as f:
