@@ -659,6 +659,7 @@ select.modal-input{-webkit-appearance:none;appearance:none;background-image:url(
 // ── STATE ──
 let config = {};
 let products = [];
+let heroImages = [];
 let currentProduct = {};
 let stripe, stripeElements, paymentElement;
 let heroIndex = 0;
@@ -684,14 +685,16 @@ let heroTimer = null;
 // ── FETCH DATA ──
 async function loadData() {
   try {
-    const [configRes, productsRes, countsRes] = await Promise.all([
+    const [configRes, productsRes, countsRes, heroRes] = await Promise.all([
       fetch('/api/admin/config/public'),
       fetch('/api/products/'),
-      fetch('/api/waitlist/counts')
+      fetch('/api/waitlist/counts'),
+      fetch('/api/media/hero'),
     ]);
 
     if (configRes.ok) config = await configRes.json();
     if (productsRes.ok) products = await productsRes.json();
+    if (heroRes.ok) heroImages = await heroRes.json();
     if (countsRes.ok) {
       const counts = await countsRes.json();
       document.getElementById('waitlistCounter').textContent = counts.waitlist_count || '0';
@@ -812,12 +815,14 @@ function renderProducts() {
     `;
   }).join('');
 
-  // Create hero carousel dots
+  // Create hero carousel dots — use heroImages if configured, else product images
+  const slideCount = heroImages.length || Math.min(products.length, 8);
   const dots = document.getElementById('hcpDots');
-  dots.innerHTML = products.slice(0, 8).map((p, i) =>
+  dots.innerHTML = Array.from({length: slideCount}, (_, i) =>
     `<div class="hcp-dot ${i === 0 ? 'active' : ''}" data-i="${i}" onclick="changeHeroImage(${i})"
-         title="${p.name}" style="background:${getRandomColor()}"></div>`
+         style="background:${getRandomColor()}"></div>`
   ).join('');
+  if (slideCount > 0) changeHeroImage(0);
 }
 
 // ── PRODUCT DETAIL ──
@@ -892,9 +897,14 @@ function getRandomColor() {
 
 function changeHeroImage(i) {
   heroIndex = i;
-  const product = products[i];
   const img = document.getElementById('heroImg');
-  img.src = product.image_url || `images/img-${i}.jpg`;
+  if (heroImages.length) {
+    const h = heroImages[i % heroImages.length];
+    img.src = h.url;
+    if (h.alt_text) img.alt = h.alt_text;
+  } else if (products[i]) {
+    img.src = products[i].image_url || `images/img-${i}.jpg`;
+  }
   document.querySelectorAll('.hcp-dot').forEach((d, idx) => {
     d.classList.toggle('active', idx === i);
   });
@@ -903,9 +913,10 @@ function changeHeroImage(i) {
 function startHeroSlideshow() {
   if (heroTimer) clearInterval(heroTimer);
   const interval = parseInt(config.hero_slide_interval || '1000');
-  if (!products.length || interval <= 0) return;
+  const total = heroImages.length || Math.min(products.length, 8);
+  if (!total || interval <= 0) return;
   heroTimer = setInterval(() => {
-    heroIndex = (heroIndex + 1) % Math.min(products.length, 8);
+    heroIndex = (heroIndex + 1) % total;
     changeHeroImage(heroIndex);
   }, interval);
 }
