@@ -245,5 +245,5 @@ class CampaignOut(BaseModel):
 # ── NOTIFY ──
 
 class NotifyAllRequest(BaseModel):
-    shop_url: str = "https://strapeezzy.com"
+    shop_url: str = "https://lidle.com"
     message: Optional[str] = None

@@ -15,8 +15,8 @@ BREVO_PORT = int(os.getenv("BREVO_SMTP_PORT", "587"))
 # Accept either BREVO_SMTP_USER or BREVO_USER (and same for pass)
 BREVO_USER = os.getenv("BREVO_SMTP_USER") or os.getenv("BREVO_USER", "")
 BREVO_PASS = os.getenv("BREVO_SMTP_PASS") or os.getenv("BREVO_PASS", "")
-FROM_EMAIL = os.getenv("FROM_EMAIL", "hello@strapeezzy.com")
-FROM_NAME = os.getenv("FROM_NAME", "Strapeezzy")
+FROM_EMAIL = os.getenv("FROM_EMAIL", "hello@lidle.com")
+FROM_NAME = os.getenv("FROM_NAME", "Lidle-By-Lidle")
 
 if BREVO_USER:
     logger.info(f"[EMAIL] Brevo configured: {BREVO_USER[:6]}*** → {FROM_EMAIL}")
@@ -34,30 +34,30 @@ def _base_layout(content: str, accent: str = "#F5C600") -> str:
       <div style="max-width:560px;margin:0 auto;background:#FAFAF8;border:2px solid #0D0D0D;">
         <div style="background:{accent};padding:28px 36px;border-bottom:2px solid #0D0D0D;">
           <h1 style="margin:0;font-size:30px;letter-spacing:4px;font-weight:900;color:#0D0D0D;">
-            STRAPEE<span style="color:#E87CA0;">ZZY</span>
+            <span style="color:#E87CA0;">Li</span><span style="color:#4DCFC4;">dl</span><span style="color:#F5C600;">e</span>
           </h1>
         </div>
         <div style="padding:36px;">{content}</div>
         <div style="padding:20px 36px;border-top:1px solid #E0D8CF;font-size:11px;color:#999;">
-          © 2026 Strapeezzy · <a href="https://strapeezzy.com" style="color:#999;">strapeezzy.com</a>
+          © 2026 Lidle-By-Lidle · <a href="https://lidle.com" style="color:#999;">lidle.com</a>
         </div>
       </div>
     </body></html>"""
 
 
 def template_waitlist_confirm(name: str, position: int) -> tuple[str, str]:
-    subject = "You're on the Strapeezzy waitlist! 🎉"
+    subject = "You're on the Lidle-By-Lidle waitlist! 🎉"
     body = _base_layout(f"""
-        <h2 style="margin:0 0 16px;font-size:24px;">You're in, {name or 'watch lover'}! 🙌</h2>
+        <h2 style="margin:0 0 16px;font-size:24px;">You're in, {name or 'shopper'}! 🙌</h2>
         <p style="color:#555;line-height:1.7;margin:0 0 12px;">
-            You're <strong>#{position}</strong> on the Strapeezzy Pioneer waitlist.
+            You're <strong>#{position}</strong> on the Lidle-By-Lidle waitlist.
         </p>
         <p style="color:#555;line-height:1.7;margin:0 0 28px;">
-            We'll email you the moment our Pioneer case-straps for the AP × Swatch Royalpop are ready to ship.
-            No spam — just one email when it's go time.
+            We'll email you the moment we launch with exclusive early-access pricing and new product launches.
+            No spam — just updates when there's something great to share.
         </p>
         <div style="background:#0D0D0D;color:#F5C600;padding:16px 28px;display:inline-block;font-size:18px;font-weight:700;letter-spacing:2px;">
-            8 COLORWAYS · COMING 2026
+            PREMIUM DEALS · PERSONAL SHOPPING
         </div>
     """)
     return subject, body
@@ -81,7 +81,7 @@ def template_order_confirm(order: dict) -> tuple[str, str]:
 
 
 def template_shipping_confirm(order: dict) -> tuple[str, str]:
-    subject = f"Your Strapeezzy strap is on its way! 📦"
+    subject = f"Your Lidle-By-Lidle order is on its way! 📦"
     tracking_block = ""
     if order.get("tracking_number"):
         tracking_block = f"""
