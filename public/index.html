@@ -16,6 +16,7 @@
   --yellow:#F5C600; --pink:#E87CA0; --teal:#4DCFC4;
   --radius:0px;
   --nav-h:68px;
+  --header-h:112px; /* announcement(~44px) + nav(68px); JS overrides */
 }
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;}
@@ -27,7 +28,7 @@ button{font-family:inherit;border:none;cursor:pointer;}
 /* ── CURSOR (desktop only) ── */
 #cur{display:none;}
 @media(pointer:fine){
-  #cur{display:block;width:16px;height:16px;background:var(--yellow);border-radius:50%;position:fixed;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .18s,height .18s,background .18s;mix-blend-mode:multiply;}
+  #cur{display:block;width:16px;height:16px;background:var(--yellow);border-radius:50%;position:fixed;pointer-events:none;z-index:9999;left:-100px;top:-100px;transform:translate(-50%,-50%);transition:width .18s,height .18s,background .18s,opacity .2s;mix-blend-mode:multiply;}
   #cur.big{width:48px;height:48px;background:var(--pink);}
   body{cursor:none;}
 }
@@ -35,9 +36,14 @@ button{font-family:inherit;border:none;cursor:pointer;}
 section { content-visibility: auto; contain-intrinsic-size: auto 500px; }
 .product-card { content-visibility: auto; }
 
+/* ── SITE HEADER (fixed wrapper for banner + nav) ── */
+.site-header{
+  position:fixed;top:0;left:0;right:0;z-index:600;
+}
+
 /* ── NAV ── */
 nav{
-  position:fixed;top:0;left:0;right:0;z-index:500;
+  position:relative;
   display:flex;align-items:center;justify-content:space-between;
   height:var(--nav-h);padding:0 24px;
   background:rgba(245,240,232,0.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
@@ -64,7 +70,7 @@ nav{
 
 /* ── HERO ── */
 .hero{
-  min-height:100svh;padding-top:var(--nav-h);
+  min-height:100svh;padding-top:var(--header-h);
   display:flex;flex-direction:column;
 }
 @media(min-width:768px){flex-direction:row;}
@@ -229,7 +235,7 @@ h1 .c2{color:var(--teal);}
 .detail-bg{
   display:none;position:fixed;top:0;left:0;right:0;bottom:0;
   background:rgba(0,0,0,0.72);z-index:800;
-  overflow-y:auto;padding:var(--nav-h) 0 40px;
+  overflow-y:auto;padding:var(--header-h) 0 40px;
 }
 .detail-bg.open{display:block;}
 .detail-wrap{
@@ -349,25 +355,33 @@ h1 .c2{color:var(--teal);}
 }
 .modal-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .modal-row .modal-input{margin-bottom:16px;}
-#card-element{
-  padding:11px;border:1px solid #ddd;
-  margin-bottom:16px;font-size:14px;
-}
-#card-errors{
-  color:#cc1c3a;font-size:13px;margin-bottom:16px;
-}
-#payBtn, .waitlist-join-btn{
+#payment-element{margin-bottom:16px;}
+#card-errors{color:#cc1c3a;font-size:13px;margin-bottom:16px;min-height:20px;}
+#payBtn,#continueBtn,.waitlist-join-btn{
   width:100%;background:var(--black);color:var(--yellow);
   padding:14px;font-family:'Bebas Neue',sans-serif;
   font-size:15px;letter-spacing:1.5px;
-  transition:background .2s;
+  transition:background .2s;border:none;cursor:pointer;
 }
-#payBtn:hover:not(:disabled), .waitlist-join-btn:hover:not(:disabled){background:var(--yellow);color:var(--black);}
-#payBtn:disabled, .waitlist-join-btn:disabled{opacity:0.6;cursor:not-allowed;}
-.stripe-badge{
-  font-size:12px;color:#777;margin-top:12px;text-align:center;
+#payBtn:hover:not(:disabled),#continueBtn:hover:not(:disabled),.waitlist-join-btn:hover:not(:disabled){background:var(--yellow);color:var(--black);}
+#payBtn:disabled,#continueBtn:disabled,.waitlist-join-btn:disabled{opacity:0.6;cursor:not-allowed;}
+.stripe-badge{font-size:12px;color:#777;margin-top:12px;text-align:center;}
+.checkout-step{display:none;}
+.checkout-step.active{display:block;}
+.pm-methods{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;}
+.pm-chip{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:5px 10px;border:1.5px solid #ddd;
+  font-size:11px;font-weight:600;letter-spacing:.5px;color:#444;
+  border-radius:4px;
 }
-.stripe-lock{font-size:14px;}
+.back-link{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:12px;color:#888;cursor:pointer;margin-bottom:16px;
+  background:none;border:none;padding:0;
+}
+.back-link:hover{color:var(--black);}
+.modal-input textarea{resize:none;}
 #paySuccess{
   display:none;padding:40px 24px;text-align:center;
 }
@@ -388,18 +402,18 @@ h1 .c2{color:var(--teal);}
 
 <div id="cur"></div>
 
-<!-- ── ANNOUNCEMENT ── -->
-<div class="announcement" id="announcementBar">Free shipping on orders over $150 · Ships worldwide</div>
-
-<!-- ── NAV ── -->
-<nav>
-  <div class="logo" id="logoContainer">stra<em>p</em></div>
-  <ul class="nav-links">
-    <li><a href="#shop">Shop</a></li>
-    <li><a href="#waitlist">Waitlist</a></li>
-  </ul>
-  <button class="nav-btn" id="shopNavBtn" onclick="handleShopClick()">shop</button>
-</nav>
+<!-- ── SITE HEADER (announcement + nav stacked, fixed together) ── -->
+<div class="site-header" id="siteHeader">
+  <div class="announcement" id="announcementBar">Free shipping on orders over $150 · Ships worldwide</div>
+  <nav>
+    <div class="logo" id="logoContainer">stra<em>p</em></div>
+    <ul class="nav-links">
+      <li><a href="#shop">Shop</a></li>
+      <li><a href="#waitlist">Waitlist</a></li>
+    </ul>
+    <button class="nav-btn" id="shopNavBtn" onclick="handleShopClick()">shop</button>
+  </nav>
+</div>
 
 <!-- ── HERO ── -->
 <section class="hero">
@@ -499,17 +513,47 @@ h1 .c2{color:var(--teal);}
         </div>
       </div>
       <div class="modal-body" id="paymentBody">
-        <label class="modal-label">Email</label>
-        <input class="modal-input" type="email" id="emailInput" placeholder="your@email.com" autocomplete="email">
-        <label class="modal-label">Name on card</label>
-        <input class="modal-input" type="text" id="nameInput" placeholder="Jane Smith" autocomplete="name">
-        <label class="modal-label">Card details</label>
-        <div id="card-element"></div>
-        <div id="card-errors"></div>
-        <button id="payBtn" onclick="handlePay()">Pay Securely</button>
-        <div class="stripe-badge">
-          <span class="stripe-lock">🔒</span> Powered by <strong>Stripe</strong>
+
+        <!-- Step 1: Customer info -->
+        <div id="checkoutStep1" class="checkout-step active">
+          <div class="modal-row">
+            <div>
+              <label class="modal-label">Full Name</label>
+              <input class="modal-input" type="text" id="fullNameInput" placeholder="Jane Smith" autocomplete="name">
+            </div>
+            <div>
+              <label class="modal-label">Phone Number</label>
+              <input class="modal-input" type="tel" id="phoneInput" placeholder="+44 7911 123456" autocomplete="tel">
+            </div>
+          </div>
+          <label class="modal-label">Email Address</label>
+          <input class="modal-input" type="email" id="emailInput" placeholder="your@email.com" autocomplete="email">
+          <label class="modal-label">Shipping / Delivery Address</label>
+          <textarea class="modal-input" id="addressInput" placeholder="123 High Street&#10;London, W1A 1AA&#10;United Kingdom" rows="3" style="resize:none;margin-bottom:16px"></textarea>
+          <div style="margin-bottom:18px">
+            <div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#888;margin-bottom:8px">Accepted Payment Methods</div>
+            <div class="pm-methods">
+              <span class="pm-chip">💳 Card</span>
+              <span class="pm-chip">🍃 Klarna</span>
+              <span class="pm-chip">⬛ Clearpay</span>
+              <span class="pm-chip">🔵 PayPal</span>
+              <span class="pm-chip">🍎 Apple Pay</span>
+              <span class="pm-chip">G Google Pay</span>
+            </div>
+          </div>
+          <div id="step1-errors" style="color:#cc1c3a;font-size:13px;margin-bottom:12px;min-height:18px"></div>
+          <button id="continueBtn" onclick="continueToPayment()">Continue to Payment →</button>
         </div>
+
+        <!-- Step 2: Payment method -->
+        <div id="checkoutStep2" class="checkout-step">
+          <button class="back-link" onclick="backToInfo()">← Back to your details</button>
+          <div id="payment-element"></div>
+          <div id="card-errors"></div>
+          <button id="payBtn" onclick="handlePay()">Pay Securely</button>
+          <div class="stripe-badge">🔒 Encrypted & secure · Powered by <strong>Stripe</strong></div>
+        </div>
+
       </div>
     </div>
     <div id="paySuccess">
@@ -525,9 +569,26 @@ h1 .c2{color:var(--teal);}
 let config = {};
 let products = [];
 let currentProduct = {};
-let stripe, cardElement;
+let stripe, stripeElements, paymentElement;
 let heroIndex = 0;
 let heroTimer = null;
+
+// ── CURSOR ──
+(function() {
+  const cur = document.getElementById('cur');
+  if (!cur) return;
+  document.addEventListener('mousemove', e => {
+    cur.style.left = e.clientX + 'px';
+    cur.style.top = e.clientY + 'px';
+  });
+  document.addEventListener('mouseover', e => {
+    if (e.target.closest('button, a, .product-card, .hcp-dot, [role="button"]')) {
+      cur.classList.add('big');
+    } else {
+      cur.classList.remove('big');
+    }
+  });
+})();
 
 // ── FETCH DATA ──
 async function loadData() {
@@ -571,6 +632,9 @@ function renderPage() {
 
   // Logo
   renderLogo();
+
+  // Recalculate header height after announcement change
+  requestAnimationFrame(updateHeaderHeight);
 
   // Check if waitlist is active
   const isWaitlistActive = config.waitlist_active === '1';
@@ -750,11 +814,18 @@ function renderLogo() {
   }
 }
 
+// ── HEADER HEIGHT ──
+function updateHeaderHeight() {
+  const hdr = document.getElementById('siteHeader');
+  if (hdr) {
+    document.documentElement.style.setProperty('--header-h', hdr.offsetHeight + 'px');
+  }
+}
+
 // ── MODAL ──
 function openModal(productId) {
   const isWaitlistActive = config.waitlist_active === '1';
 
-  // If waitlist is active, don't open modal
   if (isWaitlistActive) {
     alert('Store is in waitlist mode. Please join the waitlist for pre-order access.');
     return;
@@ -772,14 +843,24 @@ function openModal(productId) {
   document.getElementById('modalSub').textContent = product.colorway || 'Pioneer';
   document.getElementById('modalPrice').textContent = '$' + price;
   document.getElementById('modalImg').src = imgSrc;
-  document.getElementById('payBtn').textContent = `Pay Securely — $${price}`;
   document.getElementById('modalForm').style.display = '';
   document.getElementById('paySuccess').classList.remove('show');
   document.getElementById('card-errors').textContent = '';
+  document.getElementById('step1-errors').textContent = '';
+
+  // Reset to step 1
+  document.getElementById('checkoutStep1').classList.add('active');
+  document.getElementById('checkoutStep2').classList.remove('active');
+
+  // Destroy any existing payment element
+  if (paymentElement) { try { paymentElement.destroy(); } catch(_) {} paymentElement = null; }
+  stripeElements = null;
+  document.getElementById('payment-element').innerHTML = '';
+
   document.getElementById('modalBg').classList.add('open');
   document.body.style.overflow = 'hidden';
 
-  setTimeout(initStripe, 100);
+  if (!stripe) initStripe();
 }
 
 function closeModal() {
@@ -813,34 +894,31 @@ function initStripe() {
     const pk = localStorage.getItem('stripe_pk');
     if (!pk) return;
     stripe = Stripe(pk);
-    const elements = stripe.elements();
-    cardElement = elements.create('card');
-    cardElement.mount('#card-element');
-    cardElement.on('change', e => {
-      document.getElementById('card-errors').textContent = e.error ? e.error.message : '';
-    });
   } catch (e) {
     console.warn('Stripe init failed', e);
   }
 }
 
-async function handlePay() {
+async function continueToPayment() {
+  const name = document.getElementById('fullNameInput').value.trim();
   const email = document.getElementById('emailInput').value.trim();
-  const name = document.getElementById('nameInput').value.trim();
+  const phone = document.getElementById('phoneInput').value.trim();
+  const address = document.getElementById('addressInput').value.trim();
+  const errEl = document.getElementById('step1-errors');
 
-  if (!email || !name) {
-    document.getElementById('card-errors').textContent = 'Please fill in your email and name.';
+  if (!name || !email || !phone || !address) {
+    errEl.textContent = 'Please fill in all fields to continue.';
     return;
   }
-
-  if (!stripe || !cardElement) {
-    showSuccess();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errEl.textContent = 'Please enter a valid email address.';
     return;
   }
+  errEl.textContent = '';
 
-  const btn = document.getElementById('payBtn');
+  const btn = document.getElementById('continueBtn');
   btn.disabled = true;
-  btn.textContent = 'Processing…';
+  btn.textContent = 'Loading payment…';
 
   try {
     const res = await fetch('/api/stripe/create-payment-intent', {
@@ -850,30 +928,76 @@ async function handlePay() {
         product_name: currentProduct.name,
         customer_email: email,
         customer_name: name,
-        customer_phone: ''
+        customer_phone: phone,
+        shipping_address: address,
       })
     });
 
-    if (!res.ok) throw new Error('Payment failed');
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Could not start checkout. Please try again.');
+    }
     const data = await res.json();
 
-    const result = await stripe.confirmCardPayment(data.client_secret, {
-      payment_method: {
-        card: cardElement,
-        billing_details: { name, email }
-      }
+    if (!stripe) initStripe();
+    if (!stripe) throw new Error('Payment system unavailable. Please refresh and try again.');
+
+    stripeElements = stripe.elements({ clientSecret: data.client_secret, appearance: { theme: 'flat', variables: { colorPrimary: '#0D0D0D', colorBackground: '#F5F0E8', fontFamily: 'DM Sans, sans-serif' } } });
+    paymentElement = stripeElements.create('payment', { layout: 'tabs' });
+    paymentElement.mount('#payment-element');
+
+    // Show step 2
+    document.getElementById('checkoutStep1').classList.remove('active');
+    document.getElementById('checkoutStep2').classList.add('active');
+
+    const price = (currentProduct.price_cents / 100).toFixed(2);
+    document.getElementById('payBtn').textContent = `Pay Securely — £${price}`;
+  } catch (err) {
+    errEl.textContent = err.message || 'Something went wrong.';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Continue to Payment →';
+  }
+}
+
+function backToInfo() {
+  document.getElementById('checkoutStep2').classList.remove('active');
+  document.getElementById('checkoutStep1').classList.add('active');
+  document.getElementById('card-errors').textContent = '';
+}
+
+async function handlePay() {
+  if (!stripe || !stripeElements) { showSuccess(); return; }
+
+  const btn = document.getElementById('payBtn');
+  btn.disabled = true;
+  btn.textContent = 'Processing…';
+
+  const name = document.getElementById('fullNameInput').value.trim();
+  const email = document.getElementById('emailInput').value.trim();
+  const phone = document.getElementById('phoneInput').value.trim();
+  const address = document.getElementById('addressInput').value.trim();
+
+  try {
+    const result = await stripe.confirmPayment({
+      elements: stripeElements,
+      confirmParams: {
+        payment_method_data: {
+          billing_details: { name, email, phone }
+        },
+        shipping: { name, address: { line1: address } },
+        return_url: window.location.href,
+      },
+      redirect: 'if_required',
     });
 
-    if (result.error) {
-      throw new Error(result.error.message);
-    }
-
+    if (result.error) throw new Error(result.error.message);
     showSuccess();
   } catch (err) {
-    document.getElementById('card-errors').textContent = err.message || 'Payment failed';
+    document.getElementById('card-errors').textContent = err.message || 'Payment failed. Please try again.';
     btn.disabled = false;
     const price = (currentProduct.price_cents / 100).toFixed(2);
-    btn.textContent = `Pay Securely — $${price}`;
+    btn.textContent = `Pay Securely — £${price}`;
   }
 }
 
@@ -924,6 +1048,10 @@ async function joinWaitlist() {
 
 // ── INIT ──
 async function init() {
+  // Measure header height immediately and on resize
+  updateHeaderHeight();
+  window.addEventListener('resize', updateHeaderHeight);
+
   try {
     const pkRes = await fetch('/api/stripe/publishable-key');
     if (pkRes.ok) {
