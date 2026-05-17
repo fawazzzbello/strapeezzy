@@ -365,7 +365,17 @@ h1 .c2{color:var(--teal);}
 }
 .modal-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .modal-row .modal-input{margin-bottom:16px;}
-#payment-element{margin-bottom:16px;}
+#payment-element{margin-bottom:16px;min-height:40px;}
+.pe-loading{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  padding:24px;background:#f8f8f8;border:1px solid #e0e0e0;
+  font-size:13px;color:#888;margin-bottom:16px;
+}
+.pe-spinner{
+  width:18px;height:18px;border:2px solid #ddd;border-top-color:#666;
+  border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
 #card-errors{color:#cc1c3a;font-size:13px;margin-bottom:16px;min-height:20px;}
 #payBtn,#continueBtn,.waitlist-join-btn{
   width:100%;background:var(--black);color:var(--yellow);
@@ -1050,6 +1060,14 @@ async function continueToPayment() {
     const price = (currentProduct.price_cents / 100).toFixed(2);
     stripeElements = stripe.elements({ clientSecret: data.client_secret, appearance: { theme: 'flat', variables: { colorPrimary: '#0D0D0D', colorBackground: '#F5F0E8', fontFamily: 'DM Sans, sans-serif' } } });
     paymentElement = stripeElements.create('payment', { layout: 'tabs' });
+
+    const peEl = document.getElementById('payment-element');
+    peEl.innerHTML = '<div class="pe-loading"><div class="pe-spinner"></div>Loading payment methods…</div>';
+    paymentElement.on('ready', () => { peEl.querySelector('.pe-loading')?.remove(); });
+    paymentElement.on('loaderror', (e) => {
+      peEl.innerHTML = '';
+      document.getElementById('card-errors').textContent = 'Payment form failed to load. Please refresh and try again.';
+    });
     paymentElement.mount('#payment-element');
 
     document.getElementById('checkoutStep1').classList.remove('active');
@@ -1073,7 +1091,7 @@ function backToInfo() {
 }
 
 async function handlePay() {
-  if (!stripe || !stripeElements) { showSuccess(); return; }
+  if (!stripe || !stripeElements) { document.getElementById('card-errors').textContent = 'Payment system unavailable. Please refresh and try again.'; return; }
 
   const btn = document.getElementById('payBtn');
   btn.disabled = true;
@@ -1099,7 +1117,7 @@ async function handlePay() {
           name,
           address: { line1: addr.line1, city: addr.city, postal_code: addr.postal_code, country: addr.country, state: addr.state || '' }
         },
-        return_url: window.location.href,
+        return_url: window.location.origin + '/',
       },
       redirect: 'if_required',
     });
@@ -1172,11 +1190,38 @@ async function joinWaitlist() {
   }
 }
 
+// ── HANDLE STRIPE REDIRECT RETURN ──
+async function handleStripeRedirect() {
+  const params = new URLSearchParams(window.location.search);
+  const redirectStatus = params.get('redirect_status');
+  const piId = params.get('payment_intent');
+  if (!redirectStatus || !piId) return;
+
+  // Clean URL so back-navigation doesn't re-trigger this
+  history.replaceState({}, '', window.location.pathname);
+
+  if (redirectStatus === 'succeeded') {
+    // Show success notification banner — the webhook will have created the order
+    const banner = document.createElement('div');
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:2000;background:#22a045;color:#fff;text-align:center;padding:14px 24px;font-weight:600;font-size:15px;';
+    banner.textContent = '✓ Payment successful! You\'ll receive a confirmation email shortly.';
+    document.body.prepend(banner);
+    setTimeout(() => banner.remove(), 8000);
+  } else if (redirectStatus === 'failed' || redirectStatus === 'requires_payment_method') {
+    const banner = document.createElement('div');
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:2000;background:#cc1c3a;color:#fff;text-align:center;padding:14px 24px;font-weight:600;font-size:15px;';
+    banner.innerHTML = '✕ Payment was not completed. <button onclick="this.parentElement.remove()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;margin-left:12px">×</button>';
+    document.body.prepend(banner);
+  }
+}
+
 // ── INIT ──
 async function init() {
   // Measure header height immediately and on resize
   updateHeaderHeight();
   window.addEventListener('resize', updateHeaderHeight);
+
+  handleStripeRedirect();
 
   try {
     const pkRes = await fetch('/api/stripe/publishable-key');
