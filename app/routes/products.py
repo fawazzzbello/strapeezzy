@@ -419,8 +419,9 @@ async def scrape_product_url(
     body: ScrapeUrlRequest,
     current_user: AdminUser = Depends(require_roles(Role.ADMIN, Role.SUPERADMIN)),
 ):
-    # ── 1. Fetch the URL ──
-    headers = {
+    from urllib.parse import urlparse, urlunparse
+
+    browser_headers = {
         "User-Agent": (
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
             "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -430,70 +431,91 @@ async def scrape_product_url(
         "Accept-Language": "en-GB,en;q=0.9",
         "Accept-Encoding": "gzip, deflate, br",
         "Cache-Control": "no-cache",
-        "Pragma": "no-cache",
         "Upgrade-Insecure-Requests": "1",
         "Sec-Fetch-Dest": "document",
         "Sec-Fetch-Mode": "navigate",
         "Sec-Fetch-Site": "none",
         "Sec-Fetch-User": "?1",
-        "DNT": "1",
     }
-    try:
-        async with httpx.AsyncClient(
-            timeout=20, follow_redirects=True, http2=False
-        ) as client:
-            response = await client.get(body.url, headers=headers)
+    json_headers = {
+        "User-Agent": browser_headers["User-Agent"],
+        "Accept": "application/json",
+    }
+
+    parsed = urlparse(body.url)
+
+    async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
+
+        # ── Strategy 1: Shopify product JSON API ──
+        # Shopify exposes /products/{handle}.json for any product page
+        if "/products/" in parsed.path and not parsed.path.endswith(".json"):
+            json_url = urlunparse(parsed._replace(
+                path=parsed.path.rstrip("/") + ".json",
+                query="",
+            ))
+            try:
+                r = await client.get(json_url, headers=json_headers)
+                if r.status_code == 200:
+                    ct = r.headers.get("content-type", "")
+                    if "json" in ct:
+                        data = r.json()
+                        p = data.get("product", data)
+                        images = p.get("images", [])
+                        img = images[0].get("src", "") if images else ""
+                        variants = p.get("variants", [{}])
+                        price_str = variants[0].get("price", "0") if variants else "0"
+                        return {
+                            "success": True,
+                            "data": {
+                                "name": p.get("title", ""),
+                                "description": re.sub(r"<[^>]+>", " ", p.get("body_html", "") or "").strip(),
+                                "price_cents": _parse_price_str(price_str),
+                                "image_url": img,
+                                "colorway": p.get("product_type", ""),
+                                "source_url": body.url,
+                            },
+                        }
+            except Exception:
+                pass  # fall through to HTML scrape
+
+        # ── Strategy 2: HTML scrape ──
+        try:
+            response = await client.get(body.url, headers=browser_headers)
             response.raise_for_status()
             html_text = response.text
-    except httpx.HTTPStatusError as exc:
-        code = exc.response.status_code
-        if code == 403:
-            raise HTTPException(
-                status_code=422,
-                detail=(
-                    "The product page blocked the request (403 Forbidden). "
-                    "Try a direct product URL, or paste the product details manually."
-                ),
-            )
-        raise HTTPException(
-            status_code=422,
-            detail=f"Failed to fetch URL: HTTP {code}",
-        )
-    except Exception as exc:
-        raise HTTPException(
-            status_code=422,
-            detail=f"Failed to fetch URL: {exc}",
-        )
+        except httpx.HTTPStatusError as exc:
+            code = exc.response.status_code
+            if code == 403:
+                raise HTTPException(
+                    status_code=422,
+                    detail=(
+                        "The shop blocked the request (403). Most Shopify stores work — "
+                        "make sure the URL contains '/products/'. Other platforms may "
+                        "require pasting details manually."
+                    ),
+                )
+            raise HTTPException(status_code=422, detail=f"Failed to fetch URL: HTTP {code}")
+        except Exception as exc:
+            raise HTTPException(status_code=422, detail=f"Failed to fetch URL: {exc}")
 
     # ── 2. Parse HTML ──
     parser = _ProductHTMLParser()
     parser.feed(html_text)
 
-    # ── 3. Build result with priority: JSON-LD > OG > fallbacks ──
+    # ── 3. Build result: JSON-LD > OG > fallbacks ──
     ld = _extract_from_json_ld(parser.json_ld_blocks)
     meta = parser.meta
 
-    name = (
-        ld.get("name")
-        or meta.get("og:title")
-        or parser.h1
-        or parser.title
-        or ""
-    )
+    name = ld.get("name") or meta.get("og:title") or parser.h1 or parser.title or ""
     description = (
         ld.get("description")
         or meta.get("og:description")
         or meta.get("description")
         or ""
     )
-    image_url = (
-        ld.get("image_url")
-        or meta.get("og:image")
-        or ""
-    )
+    image_url = ld.get("image_url") or meta.get("og:image") or ""
     colorway = ld.get("colorway", "")
 
-    # Price: JSON-LD first, then product:price:amount meta tag
     price_cents = ld.get("price_cents", 0)
     if not price_cents:
         raw_meta_price = meta.get("product:price:amount", "")

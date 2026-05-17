@@ -158,6 +158,25 @@ class Product(Base):
     updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
 
+class HeroImage(Base):
+    __tablename__ = "hero_images"
+    id = Column(Integer, primary_key=True, index=True)
+    url = Column(String(512), nullable=False)
+    alt_text = Column(String(256), default="")
+    position = Column(Integer, default=0)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), default=utcnow)
+
+
+class GalleryImage(Base):
+    __tablename__ = "gallery_images"
+    id = Column(Integer, primary_key=True, index=True)
+    filename = Column(String(256), nullable=False)
+    url = Column(String(512), nullable=False)
+    alt_text = Column(String(256), default="")
+    created_at = Column(DateTime(timezone=True), default=utcnow)
+
+
 # ── DB SESSION ──
 from sqlalchemy.orm import sessionmaker
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

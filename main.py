@@ -273,6 +273,7 @@ from app.routes.orders import router as orders_router
 from app.routes.admin_routes import router as admin_router
 from app.routes.stripe_routes import router as stripe_router
 from app.routes.products import router as products_router
+from app.routes.media import router as media_router
 
 app.include_router(auth_router)
 app.include_router(waitlist_router)
@@ -280,6 +281,7 @@ app.include_router(orders_router)
 app.include_router(admin_router)
 app.include_router(stripe_router)
 app.include_router(products_router)
+app.include_router(media_router)
 
 
 # ── STRIPE WEBHOOK (raw body) ──
