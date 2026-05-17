@@ -389,6 +389,8 @@ async def serve_admin(path: str = ""):
 @app.get("/", include_in_schema=False)
 @app.get("/{path:path}", include_in_schema=False)
 async def serve_frontend(path: str = ""):
+    if path.startswith("api"):
+        return JSONResponse({"error": "Not found"}, status_code=404)
     f = PUBLIC_DIR / "index.html"
     if f.exists():
         return FileResponse(str(f))
