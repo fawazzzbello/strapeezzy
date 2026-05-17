@@ -139,6 +139,8 @@ class OrderOut(BaseModel):
     customer_phone: Optional[str]
     shipping_address: Optional[str]
     product_name: str
+    product_brand: Optional[str]
+    product_link: Optional[str]
     product_variant: Optional[str]
     quantity: int
     unit_price: int
