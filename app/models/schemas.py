@@ -176,6 +176,7 @@ class PaymentIntentCreate(BaseModel):
     customer_email: Optional[EmailStr] = None
     customer_name: Optional[str] = None
     customer_phone: Optional[str] = None
+    shipping_address: Optional[str] = None
 
 
 class PaymentIntentOut(BaseModel):
@@ -205,6 +206,9 @@ class ConfigUpdate(BaseModel):
     logo_type: Optional[str] = None
     logo_text: Optional[str] = None
     logo_image_url: Optional[str] = None
+
+
+# ── PAYMENT ──
 
 
 # ── CAMPAIGNS ──
