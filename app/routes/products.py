@@ -88,6 +88,7 @@ async def create_product(
     price_cents: int = Form(...),
     colorway: Optional[str] = Form(None),
     stock_quantity: int = Form(0),
+    image_url: Optional[str] = Form(None),
     file: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user: AdminUser = Depends(require_roles(Role.ADMIN, Role.SUPERADMIN)),
@@ -96,7 +97,6 @@ async def create_product(
     if db.query(Product).filter(Product.sku == sku).first():
         raise HTTPException(status_code=400, detail="SKU already exists")
 
-    image_url = None
     if file:
         filename = f"{sku.lower()}-{file.filename.split('/')[-1]}"
         filepath = os.path.join(UPLOAD_DIR, filename)
