@@ -211,6 +211,8 @@ h1 .c2{color:var(--teal);}
   font-family:'Bebas Neue',sans-serif;
   font-size:18px;color:var(--black);
 }
+.bnpl-line{font-size:10px;color:#666;margin-top:3px;letter-spacing:.2px;line-height:1.4;}
+.bnpl-line strong{color:var(--black);font-weight:700;}
 .card-actions{
   display:flex;gap:8px;margin-top:10px;
   opacity:0;transition:opacity .2s;
@@ -279,8 +281,10 @@ h1 .c2{color:var(--teal);}
 }
 .detail-price{
   font-family:'Bebas Neue',sans-serif;font-size:36px;
-  margin-bottom:20px;
+  margin-bottom:6px;
 }
+.detail-bnpl{font-size:12px;color:#666;margin-bottom:16px;line-height:1.6;}
+.detail-bnpl strong{color:var(--black);font-weight:700;}
 .detail-desc{
   font-size:14px;line-height:1.8;color:#444;
   margin-bottom:28px;flex:1;
@@ -381,6 +385,22 @@ h1 .c2{color:var(--teal);}
   font-size:11px;font-weight:600;letter-spacing:.5px;color:#444;
   border-radius:4px;
 }
+.bnpl-callout{
+  background:#f8f6f1;border-left:3px solid var(--yellow);
+  padding:12px 14px;margin-bottom:14px;border-radius:0 4px 4px 0;
+}
+.bnpl-callout-title{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#555;margin-bottom:8px;}
+.bnpl-option{display:flex;align-items:center;justify-content:space-between;font-size:12px;padding:4px 0;}
+.bnpl-option:not(:last-child){border-bottom:1px solid #eee;}
+.bnpl-option-name{display:flex;align-items:center;gap:6px;font-weight:600;color:var(--black);}
+.bnpl-option-detail{color:#666;font-size:11px;}
+/* BNPL trust bar */
+.bnpl-bar{background:var(--black);color:var(--white);padding:14px 24px;overflow:hidden;}
+.bnpl-bar-inner{display:flex;gap:24px;align-items:center;justify-content:center;flex-wrap:wrap;}
+.bnpl-bar-item{display:flex;align-items:center;gap:8px;font-size:12px;letter-spacing:.3px;white-space:nowrap;}
+.bnpl-bar-item strong{color:var(--yellow);font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;}
+.bnpl-bar-divider{color:#444;font-size:18px;}
+@media(min-width:768px){.bnpl-bar{padding:16px 48px;}.bnpl-bar-item{font-size:13px;}}
 .back-link{
   display:inline-flex;align-items:center;gap:6px;
   font-size:12px;color:#888;cursor:pointer;margin-bottom:16px;
@@ -436,6 +456,17 @@ select.modal-input{-webkit-appearance:none;appearance:none;background-image:url(
   </div>
 </section>
 
+<!-- ── BNPL TRUST BAR ── -->
+<div class="bnpl-bar" id="bnplBar" style="display:none">
+  <div class="bnpl-bar-inner">
+    <div class="bnpl-bar-item">🍃 <strong>Klarna</strong> — 3 interest-free payments</div>
+    <div class="bnpl-bar-divider">·</div>
+    <div class="bnpl-bar-item">⬛ <strong>Clearpay</strong> — 4 payments, 0% interest</div>
+    <div class="bnpl-bar-divider">·</div>
+    <div class="bnpl-bar-item">💳 Also: Card · Apple Pay · Google Pay</div>
+  </div>
+</div>
+
 <!-- ── PRODUCTS ── -->
 <section class="products" id="shop" style="display:none">
   <h2 class="section-title">Eight Colorways</h2>
@@ -469,6 +500,7 @@ select.modal-input{-webkit-appearance:none;appearance:none;background-image:url(
       <div class="detail-name" id="detailName">Royal Pop</div>
       <div class="detail-colorway" id="detailColorway">Colorway</div>
       <div class="detail-price" id="detailPrice">$79</div>
+      <div class="detail-bnpl" id="detailBnpl"></div>
       <p class="detail-desc" id="detailDesc"></p>
       <div class="detail-specs">
         <div class="detail-spec-row">
@@ -574,12 +606,20 @@ select.modal-input{-webkit-appearance:none;appearance:none;background-image:url(
               <input class="modal-input" type="text" id="addrState" placeholder="e.g. CA" autocomplete="address-level1">
             </div>
           </div>
-          <div style="margin-bottom:18px">
-            <div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#888;margin-bottom:8px">Accepted Payment Methods</div>
+          <div class="bnpl-callout" id="checkoutBnpl">
+            <div class="bnpl-callout-title">Buy now, pay later</div>
+            <div class="bnpl-option">
+              <div class="bnpl-option-name">🍃 Klarna</div>
+              <div class="bnpl-option-detail" id="klarnaDetail">3 interest-free payments</div>
+            </div>
+            <div class="bnpl-option">
+              <div class="bnpl-option-name">⬛ Clearpay</div>
+              <div class="bnpl-option-detail" id="clearpayDetail">4 payments, always 0% interest</div>
+            </div>
+          </div>
+          <div style="margin-bottom:14px">
             <div class="pm-methods">
               <span class="pm-chip">💳 Card</span>
-              <span class="pm-chip">🍃 Klarna</span>
-              <span class="pm-chip">⬛ Clearpay</span>
               <span class="pm-chip">🍎 Apple Pay</span>
               <span class="pm-chip">G Google Pay</span>
             </div>
@@ -683,12 +723,15 @@ function renderPage() {
 
   // Show products section only if store is active
   const shopSection = document.getElementById('shop');
+  const bnplBar = document.getElementById('bnplBar');
   if (isStoreActive && !isWaitlistActive) {
     shopSection.style.display = 'block';
+    if (bnplBar) bnplBar.style.display = 'block';
     renderProducts();
     startHeroSlideshow();
   } else {
     shopSection.style.display = 'none';
+    if (bnplBar) bnplBar.style.display = 'none';
   }
 
   // Update waitlist message
@@ -725,6 +768,8 @@ function renderProducts() {
 
   grid.innerHTML = products.map((p, i) => {
     const price = (p.price_cents / 100).toFixed(2);
+    const klarna = (p.price_cents / 3 / 100).toFixed(2);
+    const clearpay = (p.price_cents / 4 / 100).toFixed(2);
     const imgSrc = p.image_url || `images/img-${i}.jpg`;
     const img2 = p.image_url_2 ? `<img src="${p.image_url_2}" alt="${p.name}" class="product-img product-img-2" loading="lazy">` : '';
     return `
@@ -736,6 +781,7 @@ function renderProducts() {
         <div class="product-name">${p.name}</div>
         <div class="product-colorway">${p.colorway || 'Pioneer'}</div>
         <div class="product-price">£${price}</div>
+        <div class="bnpl-line">3x <strong>£${klarna}</strong> Klarna · 4x <strong>£${clearpay}</strong> Clearpay</div>
         <div class="card-actions" onclick="event.stopPropagation()">
           <button class="card-btn card-btn-detail" onclick="openDetail(${p.id})">Details</button>
           <button class="card-btn card-btn-buy" onclick="openModal(${p.id})">Buy</button>
@@ -766,6 +812,9 @@ function openDetail(productId) {
   document.getElementById('detailName').textContent = product.name;
   document.getElementById('detailColorway').textContent = product.colorway || 'Pioneer';
   document.getElementById('detailPrice').textContent = '£' + price;
+  const klarna3 = (product.price_cents / 3 / 100).toFixed(2);
+  const clearpay4 = (product.price_cents / 4 / 100).toFixed(2);
+  document.getElementById('detailBnpl').innerHTML = `or <strong>3x £${klarna3}</strong> with Klarna · <strong>4x £${clearpay4}</strong> with Clearpay`;
   document.getElementById('detailDesc').textContent = product.description || '';
 
   const stock = product.stock_quantity || 0;
@@ -883,6 +932,10 @@ function openModal(productId) {
   document.getElementById('modalName').textContent = product.name;
   document.getElementById('modalSub').textContent = product.colorway || 'Pioneer';
   document.getElementById('modalPrice').textContent = '£' + price;
+  const klarnaAmt = (product.price_cents / 3 / 100).toFixed(2);
+  const clearpayAmt = (product.price_cents / 4 / 100).toFixed(2);
+  document.getElementById('klarnaDetail').textContent = `3x £${klarnaAmt} — interest-free`;
+  document.getElementById('clearpayDetail').textContent = `4x £${clearpayAmt} — always 0% interest`;
   document.getElementById('modalImg').src = imgSrc;
   document.getElementById('modalForm').style.display = '';
   document.getElementById('paySuccess').classList.remove('show');
