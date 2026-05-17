@@ -22,6 +22,7 @@ from app.middleware.auth import hash_password
 
 
 def seed_db():
+    from app.models.database import Product
     db = SessionLocal()
     try:
         if db.query(AdminUser).count() == 0:
@@ -50,6 +51,105 @@ def seed_db():
             if not db.query(SiteConfig).filter(SiteConfig.key == key).first():
                 db.add(SiteConfig(key=key, value=value))
         db.commit()
+
+        if db.query(Product).count() == 0:
+            products_seed = [
+                {
+                    "sku": "RPPOP-LIME",
+                    "name": "Royal Pop Lime Frost",
+                    "description": "Bioceramic case in acid lime with a contrasting sky-blue octagonal bezel. The lime dial features a classic Petit Tapisserie pattern with ice-blue baton indices. Paired with a matching lime rubber strap, this colorway is built for those who refuse to go unnoticed.",
+                    "price_cents": 7900,
+                    "colorway": "Lime / Sky Blue",
+                    "image_url": "/images/img-0.jpg",
+                    "stock_quantity": 48,
+                },
+                {
+                    "sku": "RPPOP-FORET",
+                    "name": "Royal Pop Forêt Verte",
+                    "description": "A monochromatic study in green. Case, bezel, dial, and strap all rendered in the same bold forest green bioceramic. Luminous green hands disappear into the dial until the light catches them just right. Pure, intentional, unapologetic.",
+                    "price_cents": 7900,
+                    "colorway": "All Green",
+                    "image_url": "/images/img-1.jpg",
+                    "stock_quantity": 35,
+                },
+                {
+                    "sku": "RPPOP-CONFETTI",
+                    "name": "Royal Pop Confetti",
+                    "description": "White bioceramic case and strap anchor a riot of rainbow colour. Eight multicoloured screws on the bezel, multicoloured baton indices, and a teal second hand make every glance a celebration. The only watch that brings the party with it.",
+                    "price_cents": 7900,
+                    "colorway": "White / Rainbow",
+                    "image_url": "/images/img-2.jpg",
+                    "stock_quantity": 60,
+                },
+                {
+                    "sku": "RPPOP-CIEL",
+                    "name": "Royal Pop Ciel Nocturne",
+                    "description": "Powder-blue case and strap cradle a deep navy dial with white baton indices. A small seconds sub-dial adds a dressy touch. Understated in daylight, striking after dark.",
+                    "price_cents": 7900,
+                    "colorway": "Baby Blue / Navy",
+                    "image_url": "/images/img-3.jpg",
+                    "stock_quantity": 42,
+                },
+                {
+                    "sku": "RPPOP-ONYX",
+                    "name": "Royal Pop Onyx Blanc",
+                    "description": "Matte black bioceramic case and strap with a stark white octagonal bezel. The black dial with white indices channels the stark geometry of the original Royal Oak. The most serious colorway in the lineup — and the most versatile.",
+                    "price_cents": 7900,
+                    "colorway": "Black / White",
+                    "image_url": "/images/img-4.jpg",
+                    "stock_quantity": 55,
+                },
+                {
+                    "sku": "RPPOP-CARNIVAL-PW",
+                    "name": "Royal Pop Carnival Pocket",
+                    "description": "Pocket watch format in teal, yellow, and pink — three colours that have no business looking this good together. The teal Petit Tapisserie dial features a pink small-seconds and yellow baton markers. The open caseback reveals the movement decorated with graphic Royal Pop artwork. Worn on a braided pink cord.",
+                    "price_cents": 24900,
+                    "colorway": "Teal / Yellow / Pink",
+                    "image_url": "/images/img-5.jpg",
+                    "stock_quantity": 20,
+                },
+                {
+                    "sku": "RPPOP-ROSE-PW",
+                    "name": "Royal Pop Rose Quartz Pocket",
+                    "description": "Pocket watch in blush pink and crimson. The soft pink dial with matching indices sits behind a bold crimson bezel. The display caseback shows the movement under a Royal Pop graphic in matching pink tones. Suspended from a braided blush leather cord.",
+                    "price_cents": 24900,
+                    "colorway": "Blush Pink / Crimson",
+                    "image_url": "/images/img-6.jpg",
+                    "stock_quantity": 18,
+                },
+                {
+                    "sku": "RPPOP-NAUTILUS",
+                    "name": "Royal Pop Nautilus",
+                    "description": "Navy bioceramic case, bezel, and strap with eight vivid orange octagonal screws. The navy dial features orange baton indices and orange hands that pop against the deep blue. Inspired by deep-sea precision instruments, this is the sports colorway of the collection.",
+                    "price_cents": 7900,
+                    "colorway": "Navy / Orange",
+                    "image_url": "/images/img-7.jpg",
+                    "stock_quantity": 38,
+                },
+                {
+                    "sku": "RPPOP-TROPICANA",
+                    "name": "Royal Pop Tropicana",
+                    "description": "Yellow strap and case meet a candy-pink middle band and bezel. The turquoise-teal dial is anchored by a pink small-seconds counter with yellow hand. A tri-colour collision that captures poolside energy at its most unfiltered.",
+                    "price_cents": 7900,
+                    "colorway": "Yellow / Pink / Teal",
+                    "image_url": "/images/img-8.jpg",
+                    "stock_quantity": 30,
+                },
+                {
+                    "sku": "RPPOP-FLAMINGO",
+                    "name": "Royal Pop Flamingo",
+                    "description": "Blush-pink bioceramic case and strap with a hot-pink octagonal bezel. The blush dial features matching pink indices and a crimson seconds hand. Feminine without being soft, bold without being loud. The most requested colorway before launch.",
+                    "price_cents": 7900,
+                    "colorway": "Blush / Hot Pink",
+                    "image_url": "/images/img-9.jpg",
+                    "stock_quantity": 45,
+                },
+            ]
+            for pd in products_seed:
+                db.add(Product(**pd))
+            db.commit()
+            print(f"✅ {len(products_seed)} products seeded")
+
         print("✅ DB seeded")
     except Exception as e:
         print(f"⚠️ Seed error (non-fatal): {e}")
