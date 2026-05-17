@@ -1,77 +1,121 @@
-# Strapeezzy — Python / FastAPI Backend
+# Strapeezzy — FastAPI Backend
 
 ## Stack
+
 | Layer | Tech |
 |-------|------|
 | Framework | FastAPI + Uvicorn |
 | Database | SQLite (dev) / PostgreSQL (prod) via SQLAlchemy |
 | Auth | JWT (python-jose) + bcrypt (passlib) |
-| Payments | Stripe Python SDK |
+| Payments | Stripe Python SDK — Payment Element (cards, Klarna, Clearpay, Apple/Google Pay) |
 | Email | Brevo SMTP via smtplib (300/day free) |
 | SMS | Twilio Python SDK |
 | Rate limiting | slowapi |
-| Deploy | Railway or Render (free tier) |
+| Deploy | Railway (recommended) or Render |
 
 ## Project Structure
+
 ```
-strapeezzy-py/
-├── main.py                    ← FastAPI app, lifespan, routing
+strapeezzy/
+├── main.py                    ← FastAPI app, lifespan, seed, webhook
 ├── requirements.txt
-├── Procfile                   ← Railway/Render start command
-├── railway.toml               ← Railway config
-├── render.yaml                ← Render config
-├── .env.example               ← Copy to .env
+├── Procfile                   ← start command (uvicorn main:app --host 0.0.0.0 --port $PORT)
+├── railway.toml
+├── .env.example
 ├── app/
 │   ├── models/
 │   │   ├── database.py        ← SQLAlchemy models + DB init
-│   │   └── schemas.py         ← Pydantic request/response schemas
+│   │   └── schemas.py         ← Pydantic schemas
 │   ├── middleware/
-│   │   └── auth.py            ← JWT auth + RBAC dependency factories
+│   │   └── auth.py            ← JWT auth + RBAC
 │   ├── routes/
-│   │   ├── auth.py            ← Login, user CRUD, activity log
-│   │   ├── orders.py          ← Orders, fulfillment, manual orders
-│   │   ├── waitlist.py        ← Join, counts, notify-all
-│   │   ├── stripe_routes.py   ← Payment intents + webhooks
-│   │   └── admin_routes.py    ← Site config, email campaigns
+│   │   ├── admin_routes.py    ← Site config, campaigns, image upload
+│   │   ├── orders.py          ← Orders, fulfillment, stats
+│   │   ├── products.py        ← Product CRUD + image upload
+│   │   ├── stripe_routes.py   ← Payment intents
+│   │   └── waitlist.py        ← Join, counts, notify-all, CSV export
 │   └── services/
 │       └── notifications.py   ← Brevo SMTP + Twilio SMS
 ├── admin/
-│   └── index.html             ← Admin SPA
+│   └── index.html             ← Admin SPA (served at /admin)
 └── public/
-    └── index.html             ← Landing page (copy strapeezzy.html here)
+    └── index.html             ← Customer-facing landing page
 ```
 
-## Quick Start
+## Deploy to Railway (recommended)
 
-### 1. Install Python deps
 ```bash
-python -m venv venv
-source venv/bin/activate   # Windows: venv\Scripts\activate
-pip install -r requirements.txt
+npm i -g @railway/cli
+railway login
+railway init
+railway up
 ```
 
-### 2. Configure
+Add a PostgreSQL plugin in the Railway dashboard — it sets `DATABASE_URL` automatically.
+
+Set environment variables in the Railway dashboard (or via CLI):
+
 ```bash
-cp .env.example .env
-# Edit .env with your real API keys
+railway variables set JWT_SECRET=<random-64-char-string>
+railway variables set STRIPE_SECRET_KEY=sk_live_...
+railway variables set STRIPE_PUBLISHABLE_KEY=pk_live_...
+railway variables set STRIPE_WEBHOOK_SECRET=whsec_...
+railway variables set BREVO_SMTP_USER=you@example.com
+railway variables set BREVO_SMTP_PASS=<brevo-smtp-key>
+railway variables set FROM_EMAIL=hello@strapeezzy.com
+railway variables set INIT_ADMIN_USERNAME=admin
+railway variables set INIT_ADMIN_PASSWORD=<strong-password>
 ```
 
-### 3. Place the landing page
-```bash
-cp /path/to/strapeezzy.html public/index.html
-cp /path/to/strapeezzy-admin.html admin/index.html
-```
+After deploying, the app seeds the database automatically on first boot:
+- Creates the superadmin from `INIT_ADMIN_USERNAME` / `INIT_ADMIN_PASSWORD`
+- Upserts the 8 canonical Royal Pop products
 
-### 4. Run
-```bash
-uvicorn main:app --reload --port 8000
-```
+## Deploy to Render (alternative)
 
-### 5. Access
-- **Landing page:** http://localhost:8000
-- **Admin panel:** http://localhost:8000/admin
-- **API docs (Swagger):** http://localhost:8000/api/docs
-- **Default login:** `admin` / `strapeezzy2024!` ← CHANGE in .env
+1. Push to GitHub, create a new **Web Service** on render.com
+2. Build command: `pip install -r requirements.txt`
+3. Start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+4. Add all env vars in the Render dashboard
+
+## Accessing the App
+
+| Path | Description |
+|------|-------------|
+| `/` | Customer landing page |
+| `/admin` | Admin dashboard |
+| `/api/docs` | Swagger UI |
+| `/api/health` | Health check |
+
+Default admin login: set via `INIT_ADMIN_USERNAME` / `INIT_ADMIN_PASSWORD` env vars.
+
+---
+
+## Service Setup
+
+### Stripe
+
+1. Create account at stripe.com
+2. Copy **Secret key** → `STRIPE_SECRET_KEY`, **Publishable key** → `STRIPE_PUBLISHABLE_KEY`
+3. Create a webhook endpoint pointing to `https://your-domain/api/stripe/webhook`
+   - Event to subscribe: `payment_intent.succeeded`
+   - Copy the **Signing secret** → `STRIPE_WEBHOOK_SECRET`
+4. Enable payment methods in Stripe Dashboard → Settings → Payment methods
+   (Klarna, Clearpay/Afterpay, Apple Pay, Google Pay are shown automatically via the Payment Element)
+
+### Brevo SMTP (300 emails/day free)
+
+1. Sign up at app.brevo.com
+2. Account Settings → SMTP & API → Generate SMTP key
+3. Set `BREVO_SMTP_USER` (your login email) and `BREVO_SMTP_PASS` (the generated key)
+4. Verify your sender address in Brevo → Senders & IPs → Senders (required or emails bounce)
+5. Alternative env var names `BREVO_USER` / `BREVO_PASS` are also accepted
+
+### Twilio SMS (~$15 free trial credit)
+
+1. Sign up at twilio.com/try-twilio
+2. Get a trial phone number
+3. Set `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`
 
 ---
 
@@ -79,135 +123,65 @@ uvicorn main:app --reload --port 8000
 
 | Action | viewer | admin | superadmin |
 |--------|--------|-------|------------|
-| View orders & stats | ✅ | ✅ | ✅ |
-| View waitlist | ✅ | ✅ | ✅ |
-| View activity log | ✅ | ✅ | ✅ |
-| Create/fulfill orders | ❌ | ✅ | ✅ |
-| Edit site config | ❌ | ✅ | ✅ |
-| Send email campaigns | ❌ | ✅ | ✅ |
-| Notify waitlist | ❌ | ✅ | ✅ |
-| Create admin users | ❌ | ❌ | ✅ |
-| Edit/delete admin users | ❌ | ❌ | ✅ |
+| View orders, stats, waitlist, activity log | ✅ | ✅ | ✅ |
+| Create/fulfill orders, edit config, send campaigns | ❌ | ✅ | ✅ |
+| Notify waitlist, export CSV | ❌ | ✅ | ✅ |
+| Create/edit/delete admin users | ❌ | ❌ | ✅ |
 | Delete orders | ❌ | ❌ | ✅ |
-| Create superadmin | ❌ | ❌ | ✅ |
 
 ---
 
-## Service Setup
-
-### Stripe
-```bash
-# Install Stripe CLI for local webhook testing
-stripe listen --forward-to localhost:8000/api/stripe/webhook
-# Copy the webhook secret → STRIPE_WEBHOOK_SECRET in .env
-```
-Events to handle: `payment_intent.succeeded`, `payment_intent.payment_failed`
-
-### Brevo SMTP (300 emails/day free)
-1. Sign up at https://app.brevo.com
-2. Account Settings → SMTP & API → Generate SMTP key
-3. Add to `.env`: `BREVO_SMTP_USER` (your login email), `BREVO_SMTP_PASS` (the key)
-
-### Twilio SMS (~$15 free trial credit)
-1. Sign up at https://www.twilio.com/try-twilio
-2. Get a trial number
-3. Add `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` to `.env`
-
----
-
-## Deploy to Railway (recommended — free tier)
-
-```bash
-# Install Railway CLI
-npm i -g @railway/cli
-
-# Login and deploy
-railway login
-railway init
-railway up
-
-# Set environment variables
-railway variables set JWT_SECRET=your-secret
-railway variables set STRIPE_SECRET_KEY=sk_live_...
-# ... add all other .env vars in Railway dashboard
-```
-Railway auto-detects Python, uses `Procfile` for start command.
-
-## Deploy to Render (alternative free tier)
-
-1. Push code to GitHub
-2. Create new **Web Service** on render.com
-3. Connect your repo
-4. Build command: `pip install -r requirements.txt`
-5. Start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
-6. Add all env vars in Render dashboard
-
----
-
-## API Reference (full docs at /api/docs)
+## API Reference
 
 ### Public
-| Method | Path | Rate limit | Description |
-|--------|------|-----------|-------------|
-| POST | /api/waitlist/join | 20/15min | Join waitlist |
-| GET | /api/waitlist/counts | 100/15min | Live counts |
-| POST | /api/stripe/create-payment-intent | 100/15min | Create payment |
-| POST | /api/stripe/webhook | — | Stripe events |
-| GET | /api/health | — | Health check |
 
-### Authenticated (Bearer token from /api/auth/login)
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/admin/config/public` | Site config for landing page |
+| `GET` | `/api/products/` | List active products |
+| `POST` | `/api/waitlist/join` | Join waitlist |
+| `GET` | `/api/waitlist/counts` | Live waitlist count |
+| `POST` | `/api/stripe/create-payment-intent` | Start checkout |
+| `POST` | `/api/stripe/webhook` | Stripe webhook |
+| `GET` | `/api/health` | Health check |
+
+### Authenticated (Bearer token from `POST /api/admin/login`)
+
 | Method | Path | Min role | Description |
 |--------|------|---------|-------------|
-| POST | /api/auth/login | — | Get JWT token |
-| GET | /api/auth/me | any | Current user |
-| GET | /api/auth/users | admin | List users |
-| POST | /api/auth/users | superadmin | Create user |
-| PATCH | /api/auth/users/:id | superadmin | Update user |
-| DELETE | /api/auth/users/:id | superadmin | Delete user |
-| GET | /api/auth/activity | admin | Activity log |
-| GET | /api/orders/stats | viewer | Dashboard stats |
-| GET | /api/orders | viewer | List orders |
-| GET | /api/orders/:id | viewer | Order detail |
-| POST | /api/orders/manual | admin | Create manual order |
-| PATCH | /api/orders/:id/fulfill | admin | Update fulfillment |
-| PATCH | /api/orders/:id/status | admin | Update status |
-| DELETE | /api/orders/:id | superadmin | Delete order |
-| GET | /api/waitlist | viewer | List waitlist |
-| PATCH | /api/waitlist/counts | admin | Override counts |
-| POST | /api/waitlist/notify-all | admin | Send launch blast |
-| DELETE | /api/waitlist/:id | admin | Remove entry |
-| GET | /api/admin/config | viewer | Get site config |
-| PATCH | /api/admin/config | admin | Update site config |
-| GET | /api/admin/campaigns | admin | List campaigns |
-| POST | /api/admin/campaigns | admin | Send campaign |
+| `GET` | `/api/orders/stats` | viewer | Dashboard stats |
+| `GET` | `/api/orders` | viewer | List orders |
+| `GET` | `/api/orders/:id` | viewer | Order detail |
+| `POST` | `/api/orders/manual` | admin | Create manual order |
+| `PATCH` | `/api/orders/:id/fulfill` | admin | Update fulfillment + notify customer |
+| `PATCH` | `/api/orders/:id/status` | admin | Update payment status |
+| `DELETE` | `/api/orders/:id` | superadmin | Delete order |
+| `GET` | `/api/waitlist/` | viewer | List waitlist entries |
+| `GET` | `/api/waitlist/export` | admin | Download waitlist as CSV |
+| `PATCH` | `/api/waitlist/counts` | admin | Override displayed counts |
+| `POST` | `/api/waitlist/notify-all` | admin | Send launch email + SMS blast |
+| `DELETE` | `/api/waitlist/:id` | admin | Remove entry |
+| `GET` | `/api/admin/config` | viewer | Full site config |
+| `PATCH` | `/api/admin/config` | admin | Update site config |
+| `GET` | `/api/admin/campaigns` | admin | List email campaigns |
+| `POST` | `/api/admin/campaigns` | admin | Send email campaign |
+| `GET` | `/api/products/admin/all` | admin | List all products (incl. inactive) |
+| `POST` | `/api/products/admin` | admin | Create product |
+| `PATCH` | `/api/products/admin/:id` | admin | Update product |
+| `DELETE` | `/api/products/admin/:id` | superadmin | Delete product |
+| `GET` | `/api/admin/users` | admin | List admin users |
+| `POST` | `/api/admin/users` | superadmin | Create admin user |
+| `GET` | `/api/admin/activity` | admin | Activity log |
 
 ---
 
-## Connecting the Landing Page
+## Database
 
-In `public/index.html`, update the API base URL and Stripe key:
+SQLite is used automatically when `DATABASE_URL` is not set (local dev / single-dyno deploys).
+Switch to PostgreSQL by setting:
 
-```javascript
-// Change this to your deployed Railway/Render URL
-const API_BASE = 'https://your-app.railway.app';
-
-// Your Stripe publishable key
-const STRIPE_PK = 'pk_live_YOUR_KEY';
 ```
-
-The landing page calls:
-- `POST ${API_BASE}/api/waitlist/join` — waitlist form
-- `GET ${API_BASE}/api/waitlist/counts` — live counter (polls every 30s)
-- `POST ${API_BASE}/api/stripe/create-payment-intent` — checkout
-
----
-
-## Switching to PostgreSQL (production)
-
-```bash
-# In .env, change:
 DATABASE_URL=postgresql://user:password@host:5432/strapeezzy
-
-# On Railway, add a PostgreSQL plugin and it auto-sets DATABASE_URL
 ```
-No code changes needed — SQLAlchemy handles both.
+
+No code changes required — SQLAlchemy handles both.

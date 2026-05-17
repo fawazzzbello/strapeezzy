@@ -752,7 +752,7 @@ function renderProducts() {
         </div>
         <div class="product-name">${p.name}</div>
         <div class="product-colorway">${p.colorway || 'Pioneer'}</div>
-        <div class="product-price">$${price}</div>
+        <div class="product-price">£${price}</div>
         <div class="card-actions" onclick="event.stopPropagation()">
           <button class="card-btn card-btn-detail" onclick="openDetail(${p.id})">Details</button>
           <button class="card-btn card-btn-buy" onclick="openModal(${p.id})">Buy</button>
@@ -782,7 +782,7 @@ function openDetail(productId) {
   document.getElementById('detailImg').src = imgSrc;
   document.getElementById('detailName').textContent = product.name;
   document.getElementById('detailColorway').textContent = product.colorway || 'Pioneer';
-  document.getElementById('detailPrice').textContent = '$' + price;
+  document.getElementById('detailPrice').textContent = '£' + price;
   document.getElementById('detailDesc').textContent = product.description || '';
 
   const stock = product.stock_quantity || 0;
@@ -808,7 +808,7 @@ function openDetail(productId) {
     buyBtn.textContent = 'Join Waitlist';
     buyBtn.onclick = () => { closeDetail(); document.getElementById('waitlist').scrollIntoView({behavior:'smooth'}); };
   } else {
-    buyBtn.textContent = `Buy Now — $${price}`;
+    buyBtn.textContent = `Buy Now — £${price}`;
     buyBtn.onclick = buyFromDetail;
   }
 
