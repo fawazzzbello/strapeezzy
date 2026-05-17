@@ -196,7 +196,7 @@ def get_db():
 # ── CREATE TABLES ──
 def init_db():
     Base.metadata.create_all(bind=engine)
-    # Runtime migration: add image_url_2 if missing
+    # Runtime migrations: add missing columns
     try:
         with engine.connect() as conn:
             if DATABASE_URL.startswith("sqlite"):
@@ -205,8 +205,15 @@ def init_db():
                 if "image_url_2" not in cols:
                     conn.execute(text("ALTER TABLE products ADD COLUMN image_url_2 VARCHAR(512)"))
                     conn.commit()
+
+                result = conn.execute(text("PRAGMA table_info(orders)"))
+                cols = [row[1] for row in result]
+                if "product_brand" not in cols:
+                    conn.execute(text("ALTER TABLE orders ADD COLUMN product_brand VARCHAR(128)"))
+                    conn.commit()
             else:
                 conn.execute(text("ALTER TABLE products ADD COLUMN IF NOT EXISTS image_url_2 VARCHAR(512)"))
+                conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS product_brand VARCHAR(128)"))
                 conn.commit()
     except Exception:
         pass
