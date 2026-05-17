@@ -695,8 +695,13 @@ select.modal-input{-webkit-appearance:none;appearance:none;background-image:url(
     </div>
     <div id="paySuccess">
       <h3>Order Confirmed!</h3>
-      <p>Thank you for your Strapeezzy order. You'll receive a confirmation email shortly with tracking details.</p>
-      <button class="btn-dark" onclick="closeModal()" style="margin-top:8px">Back to Shop</button>
+      <p>Thank you for your order! You'll receive a confirmation email shortly with tracking details.</p>
+      <div id="trackingInfo" style="margin-top:16px;padding:16px;background:#F5F0E8;border-radius:4px;text-align:left">
+        <p style="font-size:12px;color:#666;margin-bottom:8px">Your order reference:</p>
+        <p style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;margin-bottom:12px" id="confirmOrderNumber">—</p>
+        <a href="#" id="trackingLink" style="display:inline-block;padding:8px 16px;background:var(--teal);color:var(--black);text-decoration:none;font-size:12px;font-weight:600;letter-spacing:1px;border-radius:4px">Track Order →</a>
+      </div>
+      <button class="btn-dark" onclick="closeModal()" style="margin-top:16px">Back to Shop</button>
     </div>
   </div>
 </div>
@@ -710,6 +715,7 @@ let currentProduct = {};
 let stripe, stripeElements, paymentElement;
 let heroIndex = 0;
 let heroTimer = null;
+let currentOrderNumber = "";
 
 // ── CURSOR ──
 (function() {
@@ -1202,6 +1208,14 @@ async function handlePay() {
 function showSuccess() {
   document.getElementById('modalForm').style.display = 'none';
   document.getElementById('paySuccess').classList.add('show');
+
+  // Show tracking info if we have an order number
+  if (currentOrderNumber) {
+    document.getElementById('confirmOrderNumber').textContent = currentOrderNumber;
+    const trackingLink = document.getElementById('trackingLink');
+    trackingLink.href = `/order-tracking?order=${encodeURIComponent(currentOrderNumber)}`;
+    document.getElementById('trackingInfo').style.display = 'block';
+  }
 }
 
 // ── SUBMIT ORDER ──
@@ -1269,6 +1283,7 @@ async function submitOrder() {
 
     if (res.ok) {
       const data = await res.json();
+      currentOrderNumber = data.order_number;
       errEl.textContent = '✓ Order submitted! We'll review and send you a payment link soon.';
       errEl.style.color = '#22a045';
       closeSubmitOrderModal();

@@ -156,6 +156,7 @@ class Product(Base):
     colorway = Column(String(128), nullable=True)
     stock_quantity = Column(Integer, default=0)
     is_active = Column(Boolean, default=True)
+    gallery_images = Column(Text, nullable=True)  # JSON list of gallery image URLs
     created_at = Column(DateTime(timezone=True), default=utcnow)
     updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 

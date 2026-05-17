@@ -3,6 +3,7 @@ import json
 import os
 import random
 import string
+import asyncio
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
@@ -58,6 +59,58 @@ async def submit_order(
     return {"success": True, "order_number": order_number, "message": "Order submitted for approval"}
 
 
+# ── PUBLIC: TRACK ORDER ──
+@router.get("/track/{order_number}", include_in_schema=True)
+async def track_order(
+    order_number: str,
+    email: str = "",
+    db: Session = Depends(get_db),
+):
+    """Public endpoint to track order by order_number and email for verification."""
+    o = db.query(Order).filter(Order.order_number == order_number).first()
+    if not o:
+        raise HTTPException(404, "Order not found")
+
+    # Simple verification: email must match or be empty (open tracking)
+    if email and o.customer_email.lower() != email.lower():
+        raise HTTPException(403, "Email does not match this order")
+
+    status_labels = {
+        "pending_approval": "🔄 Pending Review",
+        "approved": "✅ Approved",
+        "payment_pending": "💳 Awaiting Payment",
+        "paid": "💰 Payment Received",
+        "cancelled": "❌ Cancelled",
+    }
+
+    fulfillment_labels = {
+        "unfulfilled": "📦 Not Yet Packed",
+        "in_progress": "📦 Being Packed",
+        "shipped": "🚚 On the Way",
+        "delivered": "✨ Delivered",
+    }
+
+    return {
+        "order_number": o.order_number,
+        "status": o.status,
+        "status_label": status_labels.get(o.status, o.status),
+        "fulfillment_status": o.fulfillment_status,
+        "fulfillment_label": fulfillment_labels.get(o.fulfillment_status, o.fulfillment_status),
+        "customer_name": o.customer_name,
+        "product_name": o.product_name,
+        "product_brand": o.product_brand,
+        "total_amount": o.total_amount,
+        "currency": o.currency,
+        "tracking_number": o.tracking_number,
+        "tracking_carrier": o.tracking_carrier,
+        "tracking_url": o.tracking_url,
+        "shipping_address": o.shipping_address,
+        "created_at": o.created_at.isoformat() if o.created_at else None,
+        "shipped_at": o.shipped_at.isoformat() if o.shipped_at else None,
+        "delivered_at": o.delivered_at.isoformat() if o.delivered_at else None,
+    }
+
+
 # ── ADMIN: APPROVE ORDER ──
 @router.patch("/{order_id}/approve", status_code=200)
 async def approve_order(
@@ -67,7 +120,9 @@ async def approve_order(
     db: Session = Depends(get_db),
     current_user: AdminUser = Depends(require_roles(Role.ADMIN, Role.SUPERADMIN)),
 ):
-    """Admin approves an order and sets the price."""
+    """Admin approves an order and sets the price. Generates Stripe payment link."""
+    import stripe as stripe_lib
+
     o = db.query(Order).filter(Order.id == order_id).first()
     if not o:
         raise HTTPException(404, "Order not found")
@@ -81,10 +136,99 @@ async def approve_order(
     if notes:
         o.notes = notes
     o.updated_at = datetime.now(timezone.utc)
+
+    # Generate Stripe payment link
+    stripe_link_url = None
+    stripe_secret = os.getenv("STRIPE_SECRET_KEY", "")
+    if stripe_secret and not stripe_secret.startswith("sk_test_YOUR"):
+        try:
+            stripe_lib.api_key = stripe_secret
+            payment_link = stripe_lib.PaymentLink.create(
+                line_items=[{
+                    "price_data": {
+                        "currency": "gbp",
+                        "unit_amount": unit_price,
+                        "product_data": {
+                            "name": o.product_name,
+                            "description": f"{o.product_brand or ''} - {o.product_link or ''}"[:250],
+                        },
+                    },
+                    "quantity": 1,
+                }],
+                custom_text={
+                    "terms_of_service_acceptance_text": "I agree to the payment terms",
+                },
+                after_completion={
+                    "type": "redirect",
+                    "redirect": {"url": f"{os.getenv('FRONTEND_URL', 'https://lidle.example.com')}/order-tracking?order={o.order_number}"},
+                },
+                metadata={
+                    "order_number": o.order_number,
+                    "customer_email": o.customer_email,
+                },
+            )
+            stripe_link_url = payment_link.url
+        except stripe_lib.StripeError as e:
+            print(f"⚠️ Stripe payment link generation failed: {e}")
+
     db.commit()
 
-    log_action(db, current_user, "APPROVE_ORDER", "orders", order_id, {"unit_price": unit_price})
-    return {"success": True, "order": order_to_dict(o)}
+    # Send approval email with payment link
+    from app.services.notifications import send_email
+    if o.customer_email:
+        async def _notify():
+            subject = f"Order {o.order_number} Approved - Ready to Pay"
+            price_gbp = (unit_price / 100).to_decimal() if hasattr(unit_price / 100, 'to_decimal') else f"£{unit_price/100:.2f}"
+
+            html = f"""
+            <h2>Your Order Has Been Approved! 🎉</h2>
+            <p>Hi {o.customer_name},</p>
+            <p>Great news! Your order <strong>{o.order_number}</strong> has been approved by our team.</p>
+
+            <h3>Order Summary</h3>
+            <ul>
+              <li><strong>Product:</strong> {o.product_name} ({o.product_brand or 'N/A'})</li>
+              <li><strong>Price:</strong> £{unit_price/100:.2f}</li>
+              <li><strong>Payment Options:</strong> Klarna, Clearpay, Card, Apple Pay, Google Pay</li>
+            </ul>
+
+            <h3>Next Step</h3>
+            """
+
+            if stripe_link_url:
+                html += f"""
+                <p><a href="{stripe_link_url}" style="display:inline-block;padding:12px 24px;background:#0D0D0D;color:#F5C600;text-decoration:none;border-radius:4px;font-weight:bold">Pay Now with Instalments →</a></p>
+                <p>Or copy this link: <code>{stripe_link_url}</code></p>
+                """
+            else:
+                html += f"""
+                <p>Your payment link is being prepared. You'll receive it shortly via email.</p>
+                <p>If you don't receive it within 5 minutes, please contact us.</p>
+                """
+
+            html += f"""
+            <hr>
+            <p style="color:#666;font-size:12px;">
+              Order #: {o.order_number}<br>
+              Status: Approved & Ready to Pay<br>
+              Lidle-By-Lidle Personal Shopper
+            </p>
+            """
+
+            await send_email(o.customer_email, o.customer_name, subject, html)
+
+        asyncio.create_task(_notify())
+
+    log_action(db, current_user, "APPROVE_ORDER", "orders", order_id, {
+        "unit_price": unit_price,
+        "stripe_link": stripe_link_url or "not_generated"
+    })
+
+    result = order_to_dict(o)
+    if stripe_link_url:
+        result["stripe_payment_link"] = stripe_link_url
+
+    return {"success": True, "order": result, "payment_link": stripe_link_url}
 
 
 def generate_order_number() -> str:
