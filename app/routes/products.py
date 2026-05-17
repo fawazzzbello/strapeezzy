@@ -1,9 +1,13 @@
 # app/routes/products.py
 import json
+import re
 from datetime import datetime, timezone
+from html.parser import HTMLParser
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
+import httpx
 import os
 import shutil
 
@@ -279,3 +283,209 @@ async def delete_product(
     db.commit()
 
     return {"success": True}
+
+
+# ── ADMIN: SCRAPE URL ──
+
+class ScrapeUrlRequest(BaseModel):
+    url: str
+
+
+class _ProductHTMLParser(HTMLParser):
+    """Minimal HTML parser that extracts meta tags, og tags, h1, title, and JSON-LD scripts."""
+
+    def __init__(self):
+        super().__init__()
+        self.meta: dict[str, str] = {}          # name/property -> content
+        self.json_ld_blocks: list[str] = []     # raw JSON-LD text
+        self.h1: str = ""
+        self.title: str = ""
+        self._in_title = False
+        self._in_h1 = False
+        self._in_json_ld = False
+        self._json_ld_buf = ""
+
+    def handle_starttag(self, tag: str, attrs):
+        attr = dict(attrs)
+        if tag == "meta":
+            key = attr.get("property") or attr.get("name") or ""
+            content = attr.get("content", "")
+            if key and content:
+                self.meta[key.lower()] = content
+        elif tag == "title":
+            self._in_title = True
+        elif tag == "h1":
+            self._in_h1 = True
+        elif tag == "script":
+            if attr.get("type", "").lower() == "application/ld+json":
+                self._in_json_ld = True
+                self._json_ld_buf = ""
+
+    def handle_endtag(self, tag: str):
+        if tag == "title":
+            self._in_title = False
+        elif tag == "h1":
+            self._in_h1 = False
+        elif tag == "script" and self._in_json_ld:
+            self._in_json_ld = False
+            self.json_ld_blocks.append(self._json_ld_buf)
+            self._json_ld_buf = ""
+
+    def handle_data(self, data: str):
+        if self._in_title and not self.title:
+            self.title = data.strip()
+        if self._in_h1 and not self.h1:
+            self.h1 = data.strip()
+        if self._in_json_ld:
+            self._json_ld_buf += data
+
+
+def _parse_price_str(raw: str) -> int:
+    """Strip currency symbols/whitespace, convert to pence (int)."""
+    cleaned = re.sub(r"[^\d.]", "", raw.strip())
+    if not cleaned:
+        return 0
+    try:
+        return round(float(cleaned) * 100)
+    except ValueError:
+        return 0
+
+
+def _extract_from_json_ld(blocks: list[str]) -> dict:
+    """Find the first schema.org Product in the JSON-LD blocks."""
+    result: dict = {}
+    for raw in blocks:
+        try:
+            data = json.loads(raw)
+        except (json.JSONDecodeError, ValueError):
+            continue
+
+        # Normalise: could be a single object or a @graph list
+        candidates = []
+        if isinstance(data, list):
+            candidates = data
+        elif isinstance(data, dict):
+            if "@graph" in data:
+                candidates = data["@graph"]
+            else:
+                candidates = [data]
+
+        for item in candidates:
+            if not isinstance(item, dict):
+                continue
+            item_type = item.get("@type", "")
+            if isinstance(item_type, list):
+                is_product = any(t.lower() == "product" for t in item_type)
+            else:
+                is_product = str(item_type).lower() == "product"
+            if not is_product:
+                continue
+
+            # Name
+            result["name"] = item.get("name", "")
+
+            # Description
+            result["description"] = item.get("description", "")
+
+            # Image
+            image = item.get("image", "")
+            if isinstance(image, list):
+                image = image[0] if image else ""
+            if isinstance(image, dict):
+                image = image.get("url", "")
+            result["image_url"] = str(image) if image else ""
+
+            # Price via offers
+            offers = item.get("offers", {})
+            if isinstance(offers, list):
+                offers = offers[0] if offers else {}
+            price_raw = ""
+            if isinstance(offers, dict):
+                price_raw = str(offers.get("price", ""))
+            if price_raw:
+                result["price_cents"] = _parse_price_str(price_raw)
+
+            # Color / colorway
+            color = item.get("color", "") or item.get("colorway", "")
+            result["colorway"] = str(color) if color else ""
+
+            return result
+
+    return result
+
+
+@router.post("/admin/scrape-url", tags=["admin"])
+async def scrape_product_url(
+    body: ScrapeUrlRequest,
+    current_user: AdminUser = Depends(require_roles(Role.ADMIN, Role.SUPERADMIN)),
+):
+    # ── 1. Fetch the URL ──
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/124.0.0.0 Safari/537.36"
+        )
+    }
+    try:
+        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+            response = await client.get(body.url, headers=headers)
+            response.raise_for_status()
+            html_text = response.text
+    except httpx.HTTPStatusError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Failed to fetch URL: HTTP {exc.response.status_code}",
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Failed to fetch URL: {exc}",
+        )
+
+    # ── 2. Parse HTML ──
+    parser = _ProductHTMLParser()
+    parser.feed(html_text)
+
+    # ── 3. Build result with priority: JSON-LD > OG > fallbacks ──
+    ld = _extract_from_json_ld(parser.json_ld_blocks)
+    meta = parser.meta
+
+    name = (
+        ld.get("name")
+        or meta.get("og:title")
+        or parser.h1
+        or parser.title
+        or ""
+    )
+    description = (
+        ld.get("description")
+        or meta.get("og:description")
+        or meta.get("description")
+        or ""
+    )
+    image_url = (
+        ld.get("image_url")
+        or meta.get("og:image")
+        or ""
+    )
+    colorway = ld.get("colorway", "")
+
+    # Price: JSON-LD first, then product:price:amount meta tag
+    price_cents = ld.get("price_cents", 0)
+    if not price_cents:
+        raw_meta_price = meta.get("product:price:amount", "")
+        if raw_meta_price:
+            price_cents = _parse_price_str(raw_meta_price)
+
+    return {
+        "success": True,
+        "data": {
+            "name": name,
+            "description": description,
+            "price_cents": price_cents,
+            "image_url": image_url,
+            "colorway": colorway,
+            "source_url": body.url,
+        },
+    }
