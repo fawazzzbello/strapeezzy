@@ -204,6 +204,34 @@ async def notify_all(
     }
 
 
+# ── ADMIN: EXPORT CSV ──
+@router.get("/export")
+async def export_waitlist(
+    db: Session = Depends(get_db),
+    current_user: AdminUser = Depends(require_roles(Role.ADMIN, Role.SUPERADMIN)),
+):
+    import csv, io
+    from fastapi.responses import Response
+
+    entries = db.query(WaitlistEntry).order_by(WaitlistEntry.created_at.asc()).all()
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(["#", "Email", "Name", "Phone", "SMS Opt-in", "Notified", "Source", "Joined (UTC)"])
+    for i, e in enumerate(entries, 1):
+        w.writerow([
+            i, e.email, e.name or "", e.phone or "",
+            "Yes" if e.notify_sms else "No",
+            "Yes" if e.notified else "No",
+            e.source or "",
+            e.created_at.strftime("%Y-%m-%d %H:%M") if e.created_at else "",
+        ])
+    return Response(
+        content=buf.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="strapeezzy-waitlist.csv"'},
+    )
+
+
 # ── ADMIN: DELETE ENTRY ──
 @router.delete("/{entry_id}", status_code=204)
 async def delete_entry(
