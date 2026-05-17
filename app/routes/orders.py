@@ -1,5 +1,6 @@
 # app/routes/orders.py
 import json
+import os
 import random
 import string
 from datetime import datetime, timezone, timedelta
@@ -245,6 +246,75 @@ async def create_manual_order(
 
     log_action(db, current_user, "CREATE_MANUAL_ORDER", "orders", o.id, {"order_number": order_number})
     return {"success": True, "order": od}
+
+
+# ── STRIPE SYNC ──
+@router.post("/stripe-sync")
+async def stripe_sync(
+    db: Session = Depends(get_db),
+    current_user: AdminUser = Depends(require_roles(Role.ADMIN, Role.SUPERADMIN)),
+):
+    """Pull all succeeded PaymentIntents from Stripe and create any missing orders."""
+    import stripe as stripe_lib
+    stripe_lib.api_key = os.getenv("STRIPE_SECRET_KEY", "")
+    if not stripe_lib.api_key or stripe_lib.api_key.startswith("sk_test_YOUR"):
+        raise HTTPException(503, "Stripe not configured")
+
+    synced = 0
+    skipped = 0
+    errors = 0
+    starting_after = None
+
+    while True:
+        params = {"limit": 100}
+        if starting_after:
+            params["starting_after"] = starting_after
+        try:
+            page = stripe_lib.PaymentIntent.list(**params)
+        except stripe_lib.StripeError as e:
+            raise HTTPException(502, f"Stripe error: {e}")
+
+        for pi in page.data:
+            if pi.status != "succeeded":
+                skipped += 1
+                continue
+            if db.query(Order).filter(Order.stripe_payment_intent == pi.id).first():
+                skipped += 1
+                continue
+            try:
+                meta = pi.get("metadata") or {}
+                ts = str(int(datetime.now(timezone.utc).timestamp()))[-6:]
+                rnd = ''.join(random.choices(string.digits, k=3))
+                o = Order(
+                    order_number=f"SZ-{ts}-{rnd}",
+                    stripe_payment_intent=pi.id,
+                    customer_name=meta.get("customer_name") or "Customer",
+                    customer_email=meta.get("customer_email") or "",
+                    customer_phone=meta.get("customer_phone") or "",
+                    shipping_address=meta.get("shipping_address") or "",
+                    product_name=meta.get("product_name") or "Pioneer Strap",
+                    product_variant=meta.get("product_colorway") or meta.get("product_variant") or "",
+                    quantity=1,
+                    unit_price=pi["amount"],
+                    total_amount=pi["amount"],
+                    currency=pi.get("currency", "gbp"),
+                    status="paid",
+                    fulfillment_status="unfulfilled",
+                )
+                db.add(o)
+                db.commit()
+                synced += 1
+            except Exception:
+                errors += 1
+                db.rollback()
+
+        if not page.has_more:
+            break
+        starting_after = page.data[-1].id
+
+    log_action(db, current_user, "STRIPE_SYNC", "orders", "all",
+               {"synced": synced, "skipped": skipped, "errors": errors})
+    return {"success": True, "synced": synced, "skipped": skipped, "errors": errors}
 
 
 # ── DELETE (superadmin only) ──

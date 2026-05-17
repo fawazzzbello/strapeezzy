@@ -199,22 +199,18 @@ def seed_db():
             db.query(Product).filter(Product.sku.notin_(canonical_skus)).update(
                 {"is_active": False}, synchronize_session=False
             )
-        # Seed canonical products — INSERT new SKUs only.
-        # Existing products are never overwritten so admin edits to
-        # price_cents, stock_quantity, and is_active survive restarts.
-        # Only content fields (name, description, colorway, images) are
-        # refreshed on existing rows so copy updates propagate automatically.
-        CONTENT_FIELDS = {"name", "description", "colorway", "image_url", "image_url_2"}
+        # Seed canonical products — INSERT ONLY.
+        # Existing rows are never touched so all admin edits
+        # (price, stock, descriptions, images, active state) persist
+        # across every restart and deployment.
+        new_count = 0
         for pd in products_seed:
-            existing = db.query(Product).filter(Product.sku == pd["sku"]).first()
-            if existing:
-                for k, v in pd.items():
-                    if k in CONTENT_FIELDS:
-                        setattr(existing, k, v)
-            else:
+            if not db.query(Product).filter(Product.sku == pd["sku"]).first():
                 db.add(Product(**pd))
+                new_count += 1
         db.commit()
-        print("✅ 8 Royal Pop products seeded (existing prices/stock preserved)")
+        if new_count:
+            print(f"✅ {new_count} new products inserted")
 
         print("✅ DB seeded")
     except Exception as e:
