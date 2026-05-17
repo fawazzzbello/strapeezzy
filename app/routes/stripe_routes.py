@@ -26,7 +26,8 @@ async def create_payment_intent(body: PaymentIntentCreate, db: Session = Depends
     try:
         intent = stripe.PaymentIntent.create(
             amount=price,
-            currency="usd",
+            currency="gbp",
+            automatic_payment_methods={"enabled": True},
             receipt_email=body.customer_email,
             description=f"Strapeezzy Pioneer Strap — {body.product_name}",
             metadata={
@@ -35,6 +36,7 @@ async def create_payment_intent(body: PaymentIntentCreate, db: Session = Depends
                 "customer_name": body.customer_name or "",
                 "customer_email": body.customer_email or "",
                 "customer_phone": body.customer_phone or "",
+                "shipping_address": body.shipping_address or "",
             },
         )
         return PaymentIntentOut(client_secret=intent.client_secret, amount=price)

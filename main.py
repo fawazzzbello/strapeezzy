@@ -303,6 +303,7 @@ async def stripe_webhook_endpoint(request: Request):
                     customer_name=meta.get("customer_name") or "Customer",
                     customer_email=meta.get("customer_email") or "",
                     customer_phone=meta.get("customer_phone") or "",
+                    shipping_address=meta.get("shipping_address") or "",
                     product_name=meta.get("product_name") or "Pioneer Strap",
                     product_variant=meta.get("product_variant") or "",
                     quantity=1, unit_price=pi["amount"], total_amount=pi["amount"],
