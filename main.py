@@ -25,11 +25,12 @@ def seed_db():
     db = SessionLocal()
     try:
         if db.query(AdminUser).count() == 0:
+            pwd = os.getenv("INIT_ADMIN_PASSWORD", "strapeezzy2024!")[:72]
             admin = AdminUser(
                 username=os.getenv("INIT_ADMIN_USERNAME", "admin"),
                 email=os.getenv("INIT_ADMIN_EMAIL", "admin@strapeezzy.com"),
                 full_name="Super Admin",
-                password_hash=hash_password(os.getenv("INIT_ADMIN_PASSWORD", "strapeezzy2024!")),
+                password_hash=hash_password(pwd),
                 role=Role.SUPERADMIN,
             )
             db.add(admin)
@@ -170,6 +171,35 @@ async def stripe_webhook_endpoint(request: Request):
 @app.get("/api/health", include_in_schema=False)
 async def health():
     return {"status": "ok", "service": "strapeezzy"}
+
+
+# ── INIT ADMIN (first-time setup) ──
+@app.post("/api/init-admin", include_in_schema=False)
+async def init_admin(
+    username: str = "admin",
+    password: str = "strapeezzy2024!",
+    email: str = "admin@strapeezzy.com",
+):
+    db = SessionLocal()
+    try:
+        # Check if admin already exists
+        if db.query(AdminUser).count() > 0:
+            return {"message": "Admin user already exists"}
+
+        admin = AdminUser(
+            username=username,
+            email=email,
+            full_name="Super Admin",
+            password_hash=hash_password(password[:72]),  # Bcrypt limit
+            role=Role.SUPERADMIN,
+        )
+        db.add(admin)
+        db.commit()
+        return {"success": True, "username": username, "message": "Admin user created"}
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        db.close()
 
 
 # ── STATIC / SPA ──
