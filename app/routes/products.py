@@ -145,6 +145,7 @@ async def update_product(
     colorway: Optional[str] = Form(None),
     stock_quantity: Optional[int] = Form(None),
     is_active: Optional[bool] = Form(None),
+    image_url: Optional[str] = Form(None),
     file: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user: AdminUser = Depends(require_roles(Role.ADMIN, Role.SUPERADMIN)),
@@ -172,6 +173,9 @@ async def update_product(
     if is_active is not None:
         product.is_active = is_active
         updates["is_active"] = is_active
+    if image_url is not None and not file:
+        product.image_url = image_url
+        updates["image_url"] = image_url
 
     if file:
         filename = f"{product.sku.lower()}-{file.filename.split('/')[-1]}"
