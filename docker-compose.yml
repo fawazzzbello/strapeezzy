@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: strapeezzy-app
+    ports:
+      - "8000:8000"
+    environment:
+      # Database
+      DATABASE_URL: postgresql://strapeezzy:strapeezzy@db:5432/strapeezzy
+
+      # API Keys and Secrets (loaded from .env file, NOT hardcoded)
+      # ⚠️  NEVER commit .env file - use .env.example instead
+      # In production, use your platform's secret management (Railway, Render, etc.)
+      JWT_SECRET: ${JWT_SECRET}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN}
+      TWILIO_PHONE_NUMBER: ${TWILIO_PHONE_NUMBER}
+      BREVO_SMTP_USER: ${BREVO_SMTP_USER}
+      BREVO_SMTP_PASS: ${BREVO_SMTP_PASS}
+
+      # Admin defaults (can be overridden)
+      INIT_ADMIN_USERNAME: ${INIT_ADMIN_USERNAME:-admin}
+      INIT_ADMIN_EMAIL: ${INIT_ADMIN_EMAIL:-admin@strapeezzy.com}
+      INIT_ADMIN_PASSWORD: ${INIT_ADMIN_PASSWORD}
+
+      # App settings
+      PRODUCT_PRICE_CENTS: ${PRODUCT_PRICE_CENTS:-7900}
+
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./public:/app/public
+      - ./admin:/app/admin
+    networks:
+      - strapeezzy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  db:
+    image: postgres:15-alpine
+    container_name: strapeezzy-db
+    environment:
+      POSTGRES_USER: strapeezzy
+      POSTGRES_PASSWORD: strapeezzy
+      POSTGRES_DB: strapeezzy
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - strapeezzy
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U strapeezzy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+
+networks:
+  strapeezzy:
+    driver: bridge
