@@ -69,7 +69,7 @@ async def get_stats(
     week_start = now - timedelta(days=7)
 
     total_revenue = db.query(func.coalesce(func.sum(Order.total_amount), 0)).filter(
-        Order.status == "paid"
+        Order.status.in_(["paid", "manual"])
     ).scalar()
 
     by_product = (
@@ -83,7 +83,7 @@ async def get_stats(
         total_orders=db.query(Order).count(),
         total_revenue=total_revenue,
         unfulfilled=db.query(Order).filter(
-            Order.fulfillment_status == "unfulfilled", Order.status == "paid"
+            Order.fulfillment_status == "unfulfilled"
         ).count(),
         shipped=db.query(Order).filter(Order.fulfillment_status == "shipped").count(),
         delivered=db.query(Order).filter(Order.fulfillment_status == "delivered").count(),
