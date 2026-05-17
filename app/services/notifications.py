@@ -12,10 +12,16 @@ logger = logging.getLogger(__name__)
 
 BREVO_HOST = os.getenv("BREVO_SMTP_HOST", "smtp-relay.brevo.com")
 BREVO_PORT = int(os.getenv("BREVO_SMTP_PORT", "587"))
-BREVO_USER = os.getenv("BREVO_SMTP_USER", "")
-BREVO_PASS = os.getenv("BREVO_SMTP_PASS", "")
+# Accept either BREVO_SMTP_USER or BREVO_USER (and same for pass)
+BREVO_USER = os.getenv("BREVO_SMTP_USER") or os.getenv("BREVO_USER", "")
+BREVO_PASS = os.getenv("BREVO_SMTP_PASS") or os.getenv("BREVO_PASS", "")
 FROM_EMAIL = os.getenv("FROM_EMAIL", "hello@strapeezzy.com")
 FROM_NAME = os.getenv("FROM_NAME", "Strapeezzy")
+
+if BREVO_USER:
+    logger.info(f"[EMAIL] Brevo configured: {BREVO_USER[:6]}*** → {FROM_EMAIL}")
+else:
+    logger.warning("[EMAIL] Brevo not configured — emails will be skipped. Set BREVO_SMTP_USER and BREVO_SMTP_PASS.")
 
 
 # ── EMAIL TEMPLATES ──
