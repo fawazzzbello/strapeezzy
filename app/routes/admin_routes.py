@@ -124,6 +124,9 @@ async def get_config_public(db: Session = Depends(get_db)):
         "strap_price": cfg.get("strap_price", "79"),
         "waitlist_count": cfg.get("waitlist_count", "0"),
         "maillist_count": cfg.get("maillist_count", "0"),
+        "waitlist_active": cfg.get("waitlist_active", "1"),
+        "store_active": cfg.get("store_active", "1"),
+        "waitlist_fee": cfg.get("waitlist_fee", "0"),
     }
 
 

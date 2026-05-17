@@ -44,7 +44,7 @@ def seed_db():
             "hero_subtitle": "Premium Pioneer case-straps for the AP × Swatch Royalpop. Eight colorways.",
             "strap_price": "79", "shipping_threshold": "150",
             "announcement_bar": "Free shipping on orders over $150 · Ships worldwide",
-            "announcement_active": "1", "waitlist_active": "1", "store_active": "1", "sms_notifications": "1",
+            "announcement_active": "1", "waitlist_active": "1", "store_active": "1", "sms_notifications": "1", "waitlist_fee": "0",
         }
         for key, value in defaults.items():
             if not db.query(SiteConfig).filter(SiteConfig.key == key).first():
