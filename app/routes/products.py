@@ -422,20 +422,42 @@ async def scrape_product_url(
     # ── 1. Fetch the URL ──
     headers = {
         "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
             "AppleWebKit/537.36 (KHTML, like Gecko) "
             "Chrome/124.0.0.0 Safari/537.36"
-        )
+        ),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-GB,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache",
+        "Upgrade-Insecure-Requests": "1",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
+        "DNT": "1",
     }
     try:
-        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+        async with httpx.AsyncClient(
+            timeout=20, follow_redirects=True, http2=False
+        ) as client:
             response = await client.get(body.url, headers=headers)
             response.raise_for_status()
             html_text = response.text
     except httpx.HTTPStatusError as exc:
+        code = exc.response.status_code
+        if code == 403:
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    "The product page blocked the request (403 Forbidden). "
+                    "Try a direct product URL, or paste the product details manually."
+                ),
+            )
         raise HTTPException(
             status_code=422,
-            detail=f"Failed to fetch URL: HTTP {exc.response.status_code}",
+            detail=f"Failed to fetch URL: HTTP {code}",
         )
     except Exception as exc:
         raise HTTPException(
