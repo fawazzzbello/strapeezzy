@@ -201,6 +201,10 @@ class ConfigUpdate(BaseModel):
     launch_date: Optional[str] = None
     waitlist_count: Optional[str] = None
     maillist_count: Optional[str] = None
+    hero_slide_interval: Optional[str] = None
+    logo_type: Optional[str] = None
+    logo_text: Optional[str] = None
+    logo_image_url: Optional[str] = None
 
 
 # ── CAMPAIGNS ──

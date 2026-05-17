@@ -28,6 +28,7 @@ async def list_products(db: Session = Depends(get_db)):
             "description": p.description,
             "price_cents": p.price_cents,
             "image_url": p.image_url,
+            "image_url_2": p.image_url_2,
             "colorway": p.colorway,
             "stock_quantity": p.stock_quantity,
         }
@@ -48,6 +49,7 @@ async def get_product(product_id: int, db: Session = Depends(get_db)):
         "description": product.description,
         "price_cents": product.price_cents,
         "image_url": product.image_url,
+        "image_url_2": product.image_url_2,
         "colorway": product.colorway,
         "stock_quantity": product.stock_quantity,
         "is_active": product.is_active,
@@ -69,6 +71,7 @@ async def admin_list_products(
             "description": p.description,
             "price_cents": p.price_cents,
             "image_url": p.image_url,
+            "image_url_2": p.image_url_2,
             "colorway": p.colorway,
             "stock_quantity": p.stock_quantity,
             "is_active": p.is_active,
@@ -89,7 +92,9 @@ async def create_product(
     colorway: Optional[str] = Form(None),
     stock_quantity: int = Form(0),
     image_url: Optional[str] = Form(None),
+    image_url_2: Optional[str] = Form(None),
     file: Optional[UploadFile] = File(None),
+    file2: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user: AdminUser = Depends(require_roles(Role.ADMIN, Role.SUPERADMIN)),
 ):
@@ -108,12 +113,24 @@ async def create_product(
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to save image: {str(e)}")
 
+    if file2:
+        filename2 = f"{sku.lower()}-2-{file2.filename.split('/')[-1]}"
+        filepath2 = os.path.join(UPLOAD_DIR, filename2)
+        try:
+            with open(filepath2, "wb") as f:
+                content = await file2.read()
+                f.write(content)
+            image_url_2 = f"/images/{filename2}"
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to save second image: {str(e)}")
+
     product = Product(
         sku=sku,
         name=name,
         description=description,
         price_cents=price_cents,
         image_url=image_url,
+        image_url_2=image_url_2,
         colorway=colorway,
         stock_quantity=stock_quantity,
     )
@@ -146,7 +163,9 @@ async def update_product(
     stock_quantity: Optional[int] = Form(None),
     is_active: Optional[bool] = Form(None),
     image_url: Optional[str] = Form(None),
+    image_url_2: Optional[str] = Form(None),
     file: Optional[UploadFile] = File(None),
+    file2: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user: AdminUser = Depends(require_roles(Role.ADMIN, Role.SUPERADMIN)),
 ):
@@ -176,6 +195,9 @@ async def update_product(
     if image_url is not None and not file:
         product.image_url = image_url
         updates["image_url"] = image_url
+    if image_url_2 is not None and not file2:
+        product.image_url_2 = image_url_2
+        updates["image_url_2"] = image_url_2
 
     if file:
         filename = f"{product.sku.lower()}-{file.filename.split('/')[-1]}"
@@ -188,6 +210,18 @@ async def update_product(
             updates["image_url"] = product.image_url
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to save image: {str(e)}")
+
+    if file2:
+        filename2 = f"{product.sku.lower()}-2-{file2.filename.split('/')[-1]}"
+        filepath2 = os.path.join(UPLOAD_DIR, filename2)
+        try:
+            with open(filepath2, "wb") as f:
+                content = await file2.read()
+                f.write(content)
+            product.image_url_2 = f"/images/{filename2}"
+            updates["image_url_2"] = product.image_url_2
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to save second image: {str(e)}")
 
     product.updated_at = datetime.now(timezone.utc)
     db.commit()

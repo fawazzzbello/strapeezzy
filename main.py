@@ -46,6 +46,7 @@ def seed_db():
             "strap_price": "79", "shipping_threshold": "150",
             "announcement_bar": "Free shipping on orders over $150 · Ships worldwide",
             "announcement_active": "1", "waitlist_active": "1", "store_active": "1", "sms_notifications": "1", "waitlist_fee": "0",
+            "hero_slide_interval": "1000", "logo_type": "text", "logo_text": "strap", "logo_image_url": "",
         }
         for key, value in defaults.items():
             if not db.query(SiteConfig).filter(SiteConfig.key == key).first():
@@ -246,9 +247,11 @@ async def add_performance_headers(request: Request, call_next):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Cache-Control"] = "public, max-age=3600"
-    # For API responses, cache for 5 minutes
+    # API responses must never be cached so admin edits are reflected immediately
     if request.url.path.startswith("/api/"):
-        response.headers["Cache-Control"] = "public, max-age=300"
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
     return response
 
 # ── ROUTERS ──

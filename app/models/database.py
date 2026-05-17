@@ -1,7 +1,7 @@
 # app/models/database.py
 from sqlalchemy import (
     create_engine, Column, Integer, String, Text, Boolean,
-    DateTime, ForeignKey, func
+    DateTime, ForeignKey, func, text
 )
 from sqlalchemy.orm import DeclarativeBase, Session, relationship
 from sqlalchemy.pool import StaticPool
@@ -147,6 +147,7 @@ class Product(Base):
     description = Column(Text, nullable=True)
     price_cents = Column(Integer, nullable=False)
     image_url = Column(String(512), nullable=True)
+    image_url_2 = Column(String(512), nullable=True)
     colorway = Column(String(128), nullable=True)
     stock_quantity = Column(Integer, default=0)
     is_active = Column(Boolean, default=True)
@@ -170,3 +171,17 @@ def get_db():
 # ── CREATE TABLES ──
 def init_db():
     Base.metadata.create_all(bind=engine)
+    # Runtime migration: add image_url_2 if missing
+    try:
+        with engine.connect() as conn:
+            if DATABASE_URL.startswith("sqlite"):
+                result = conn.execute(text("PRAGMA table_info(products)"))
+                cols = [row[1] for row in result]
+                if "image_url_2" not in cols:
+                    conn.execute(text("ALTER TABLE products ADD COLUMN image_url_2 VARCHAR(512)"))
+                    conn.commit()
+            else:
+                conn.execute(text("ALTER TABLE products ADD COLUMN IF NOT EXISTS image_url_2 VARCHAR(512)"))
+                conn.commit()
+    except Exception:
+        pass
