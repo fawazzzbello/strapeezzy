@@ -191,22 +191,30 @@ def seed_db():
                 "stock_quantity": 32,
             },
         ]
-        # Deactivate any products not in the canonical set
-        db.query(Product).filter(Product.sku.notin_(canonical_skus)).update(
-            {"is_active": False}, synchronize_session=False
-        )
-        # Upsert canonical products
+        # Deactivate non-canonical products (e.g. test products) without deleting them
+        non_canonical = db.query(Product).filter(
+            Product.sku.notin_(canonical_skus), Product.is_active == True
+        ).count()
+        if non_canonical:
+            db.query(Product).filter(Product.sku.notin_(canonical_skus)).update(
+                {"is_active": False}, synchronize_session=False
+            )
+        # Seed canonical products — INSERT new SKUs only.
+        # Existing products are never overwritten so admin edits to
+        # price_cents, stock_quantity, and is_active survive restarts.
+        # Only content fields (name, description, colorway, images) are
+        # refreshed on existing rows so copy updates propagate automatically.
+        CONTENT_FIELDS = {"name", "description", "colorway", "image_url", "image_url_2"}
         for pd in products_seed:
             existing = db.query(Product).filter(Product.sku == pd["sku"]).first()
             if existing:
                 for k, v in pd.items():
-                    if k != "sku":
+                    if k in CONTENT_FIELDS:
                         setattr(existing, k, v)
-                existing.is_active = True
             else:
                 db.add(Product(**pd))
         db.commit()
-        print("✅ 8 Royal Pop products upserted")
+        print("✅ 8 Royal Pop products seeded (existing prices/stock preserved)")
 
         print("✅ DB seeded")
     except Exception as e:
