@@ -21,6 +21,72 @@ from app.services.notifications import (
 router = APIRouter(prefix="/api/orders", tags=["orders"])
 
 
+# ── PUBLIC: SUBMIT ORDER ──
+@router.post("/submit", status_code=201, include_in_schema=True)
+async def submit_order(
+    product_name: str,
+    product_brand: str,
+    product_link: str,
+    customer_name: str,
+    customer_email: str,
+    customer_phone: str,
+    db: Session = Depends(get_db),
+):
+    """Public endpoint for buyers to submit an order for approval."""
+    if not all([product_name, product_brand, product_link, customer_name, customer_email, customer_phone]):
+        raise HTTPException(400, "All fields are required")
+
+    order_number = generate_order_number()
+    o = Order(
+        order_number=order_number,
+        customer_name=customer_name,
+        customer_email=customer_email,
+        customer_phone=customer_phone,
+        product_name=product_name,
+        product_brand=product_brand,
+        product_link=product_link,
+        quantity=1,
+        unit_price=0,
+        total_amount=0,
+        status="pending_approval",
+        fulfillment_status="unfulfilled",
+    )
+    db.add(o)
+    db.commit()
+    db.refresh(o)
+
+    return {"success": True, "order_number": order_number, "message": "Order submitted for approval"}
+
+
+# ── ADMIN: APPROVE ORDER ──
+@router.patch("/{order_id}/approve", status_code=200)
+async def approve_order(
+    order_id: int,
+    unit_price: int,
+    notes: str = "",
+    db: Session = Depends(get_db),
+    current_user: AdminUser = Depends(require_roles(Role.ADMIN, Role.SUPERADMIN)),
+):
+    """Admin approves an order and sets the price."""
+    o = db.query(Order).filter(Order.id == order_id).first()
+    if not o:
+        raise HTTPException(404, "Order not found")
+    if o.status != "pending_approval":
+        raise HTTPException(400, "Order can only be approved if it's pending approval")
+
+    o.status = "approved"
+    o.unit_price = unit_price
+    o.total_amount = unit_price
+    o.quantity = 1
+    if notes:
+        o.notes = notes
+    o.updated_at = datetime.now(timezone.utc)
+    db.commit()
+
+    log_action(db, current_user, "APPROVE_ORDER", "orders", order_id, {"unit_price": unit_price})
+    return {"success": True, "order": order_to_dict(o)}
+
+
 def generate_order_number() -> str:
     ts = str(int(datetime.now().timestamp()))[-6:]
     rnd = ''.join(random.choices(string.digits, k=3))
@@ -45,7 +111,8 @@ def order_to_dict(o: Order) -> dict:
         "stripe_payment_intent": o.stripe_payment_intent,
         "customer_name": o.customer_name, "customer_email": o.customer_email,
         "customer_phone": o.customer_phone, "shipping_address": o.shipping_address,
-        "product_name": o.product_name, "product_variant": o.product_variant,
+        "product_name": o.product_name, "product_brand": o.product_brand,
+        "product_link": o.product_link, "product_variant": o.product_variant,
         "quantity": o.quantity, "unit_price": o.unit_price, "total_amount": o.total_amount,
         "currency": o.currency, "status": o.status,
         "fulfillment_status": o.fulfillment_status, "tracking_number": o.tracking_number,

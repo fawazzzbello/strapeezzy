@@ -92,12 +92,14 @@ class Order(Base):
     customer_phone = Column(String(32), nullable=True)
     shipping_address = Column(Text, nullable=True)
     product_name = Column(String(128), nullable=False)
+    product_brand = Column(String(128), nullable=True)
+    product_link = Column(String(512), nullable=True)
     product_variant = Column(String(128), nullable=True)
     quantity = Column(Integer, default=1)
     unit_price = Column(Integer, nullable=False)   # cents
     total_amount = Column(Integer, nullable=False)  # cents
     currency = Column(String(8), default="usd")
-    status = Column(String(32), default="pending")
+    status = Column(String(32), default="pending_approval")  # pending_approval, approved, payment_pending, paid, cancelled
     fulfillment_status = Column(String(32), default="unfulfilled")
     tracking_number = Column(String(128), nullable=True)
     tracking_carrier = Column(String(64), nullable=True)
