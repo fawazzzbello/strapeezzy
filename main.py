@@ -44,7 +44,7 @@ def seed_db():
             "hero_headline_line1": "STRAP", "hero_headline_line2": "YOUR", "hero_headline_line3": "VIBE.",
             "hero_subtitle": "Premium Pioneer case-straps for the AP × Swatch Royalpop. Eight colorways.",
             "strap_price": "79", "shipping_threshold": "150",
-            "announcement_bar": "Free shipping on orders over $150 · Ships worldwide",
+            "announcement_bar": "Free shipping on orders over £150 · Ships worldwide",
             "announcement_active": "1", "waitlist_active": "1", "store_active": "1", "sms_notifications": "1", "waitlist_fee": "0",
             "hero_slide_interval": "1000", "logo_type": "text", "logo_text": "strap", "logo_image_url": "",
         }
@@ -212,6 +212,9 @@ def seed_db():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    jwt_secret = os.getenv("JWT_SECRET", "change-this-secret")
+    if jwt_secret in ("change-this-secret", "your-super-secret-jwt-key-change-me", ""):
+        print("⚠️  WARNING: JWT_SECRET is not set or is using an insecure default. Set a strong random secret before launch!")
     init_db()
     seed_db()
     print("🚀 Strapeezzy ready")

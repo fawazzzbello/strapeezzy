@@ -3,6 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 import json
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.models.database import get_db, AdminUser, ActivityLog, Role
 from app.models.schemas import LoginRequest, TokenResponse, UserCreate, UserUpdate, UserOut
@@ -12,6 +14,7 @@ from app.middleware.auth import (
 )
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+limiter = Limiter(key_func=get_remote_address)
 
 
 def log_action(db: Session, user: AdminUser, action: str, entity: str = None,
@@ -31,6 +34,7 @@ def log_action(db: Session, user: AdminUser, action: str, entity: str = None,
 
 # ── LOGIN ──
 @router.post("/login", response_model=TokenResponse)
+@limiter.limit("10/minute")
 async def login(request: Request, body: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(AdminUser).filter(
         AdminUser.username == body.username,

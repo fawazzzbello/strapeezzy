@@ -1,7 +1,9 @@
 # app/routes/stripe_routes.py — Stripe payment intents only (webhook handled in main.py)
 import os
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from sqlalchemy.orm import Session
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from app.models.schemas import PaymentIntentCreate, PaymentIntentOut
 from app.models.database import get_db, Product
 import stripe
@@ -10,10 +12,12 @@ stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "")
 PRODUCT_PRICE = int(os.getenv("PRODUCT_PRICE_CENTS", "7900"))
 
 router = APIRouter(prefix="/api/stripe", tags=["stripe"])
+limiter = Limiter(key_func=get_remote_address)
 
 
 @router.post("/create-payment-intent", response_model=PaymentIntentOut)
-async def create_payment_intent(body: PaymentIntentCreate, db: Session = Depends(get_db)):
+@limiter.limit("20/minute")
+async def create_payment_intent(request: Request, body: PaymentIntentCreate, db: Session = Depends(get_db)):
     if not stripe.api_key or stripe.api_key.startswith("sk_test_YOUR"):
         raise HTTPException(503, "Stripe not configured. Add STRIPE_SECRET_KEY to environment variables.")
 

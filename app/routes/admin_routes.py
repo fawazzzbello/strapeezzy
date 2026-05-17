@@ -5,6 +5,8 @@ import os
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Request, UploadFile, File
 from sqlalchemy.orm import Session
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.models.database import get_db, SiteConfig, ActivityLog, EmailCampaign, WaitlistEntry, AdminUser, Role
 from app.models.schemas import ConfigUpdate, CampaignCreate, CampaignOut, LoginRequest, TokenResponse, UserOut
@@ -14,10 +16,12 @@ from app.middleware.auth import (
 from app.services.notifications import send_email, template_custom
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
+limiter = Limiter(key_func=get_remote_address)
 
 
 # ── LOGIN ──
 @router.post("/login")
+@limiter.limit("10/minute")
 async def admin_login(request: Request, body: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(AdminUser).filter(
         AdminUser.username == body.username,
@@ -83,7 +87,7 @@ DEFAULT_CONFIG = {
     "hero_subtitle": "Premium Pioneer case-straps engineered exclusively for the AP × Swatch Royalpop. Eight bold colorways. One click. Zero compromise.",
     "strap_price": "79",
     "shipping_threshold": "150",
-    "announcement_bar": "Free shipping on orders over $150 · Ships worldwide",
+    "announcement_bar": "Free shipping on orders over £150 · Ships worldwide",
     "announcement_active": "1",
     "waitlist_active": "1",
     "store_active": "1",
