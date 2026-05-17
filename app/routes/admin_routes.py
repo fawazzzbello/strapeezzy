@@ -108,6 +108,25 @@ def set_cfg(db: Session, key: str, value: str):
     db.commit()
 
 
+# ── GET CONFIG (public) ──
+@router.get("/config/public")
+async def get_config_public(db: Session = Depends(get_db)):
+    """Public endpoint for landing page to fetch site config"""
+    cfg = get_all_config(db)
+    return {
+        "site_title": cfg.get("site_title", "Strapeezzy"),
+        "hero_headline_line1": cfg.get("hero_headline_line1", "STRAP"),
+        "hero_headline_line2": cfg.get("hero_headline_line2", "YOUR"),
+        "hero_headline_line3": cfg.get("hero_headline_line3", "VIBE."),
+        "hero_subtitle": cfg.get("hero_subtitle", ""),
+        "announcement_bar": cfg.get("announcement_bar", ""),
+        "announcement_active": cfg.get("announcement_active", "0"),
+        "strap_price": cfg.get("strap_price", "79"),
+        "waitlist_count": cfg.get("waitlist_count", "0"),
+        "maillist_count": cfg.get("maillist_count", "0"),
+    }
+
+
 # ── GET CONFIG ──
 @router.get("/config")
 async def get_config(
