@@ -98,6 +98,15 @@ class CountsOut(BaseModel):
 
 # ── ORDERS ──
 
+class OrderSubmit(BaseModel):
+    customer_name: str
+    customer_email: EmailStr
+    customer_phone: str
+    product_name: str
+    product_brand: str
+    product_link: str
+
+
 class OrderCreate(BaseModel):
     customer_name: str
     customer_email: EmailStr
