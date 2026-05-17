@@ -182,10 +182,19 @@ h1 .c2{color:var(--teal);}
 }
 .product-card:hover{transform:translateY(-4px);}
 .product-card:hover .card-actions{opacity:1;}
-.product-img{
-  width:100%;aspect-ratio:3/4;background:#f0f0f0;
-  object-fit:cover;margin-bottom:12px;
+.product-img-wrap{
+  position:relative;width:100%;aspect-ratio:3/4;
+  overflow:hidden;margin-bottom:12px;
 }
+.product-img{
+  width:100%;height:100%;background:#f0f0f0;
+  object-fit:cover;
+}
+.product-img-2{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  object-fit:cover;opacity:0;transition:opacity .35s;
+}
+.product-card:hover .product-img-2{opacity:1;}
 .product-name{
   font-family:'Bebas Neue',sans-serif;
   font-size:16px;letter-spacing:1px;margin-bottom:4px;
@@ -380,11 +389,11 @@ h1 .c2{color:var(--teal);}
 <div id="cur"></div>
 
 <!-- ── ANNOUNCEMENT ── -->
-<div class="announcement" id="announcementBar"></div>
+<div class="announcement" id="announcementBar">Free shipping on orders over $150 · Ships worldwide</div>
 
 <!-- ── NAV ── -->
 <nav>
-  <div class="logo">stra<em>p</em></div>
+  <div class="logo" id="logoContainer">stra<em>p</em></div>
   <ul class="nav-links">
     <li><a href="#shop">Shop</a></li>
     <li><a href="#waitlist">Waitlist</a></li>
@@ -517,6 +526,8 @@ let config = {};
 let products = [];
 let currentProduct = {};
 let stripe, cardElement;
+let heroIndex = 0;
+let heroTimer = null;
 
 // ── FETCH DATA ──
 async function loadData() {
@@ -549,14 +560,17 @@ function renderPage() {
   document.getElementById('heroLine3').textContent = config.hero_headline_line3 || 'VIBE';
   document.getElementById('heroSub').textContent = config.hero_subtitle || '';
 
-  // Update announcement
+  // Update announcement — hide only if explicitly disabled
   const announcementBar = document.getElementById('announcementBar');
-  if (config.announcement_active === '1' && config.announcement_bar) {
-    announcementBar.textContent = config.announcement_bar;
+  if (config.announcement_active !== '0') {
+    if (config.announcement_bar) announcementBar.textContent = config.announcement_bar;
     announcementBar.classList.remove('hidden');
   } else {
     announcementBar.classList.add('hidden');
   }
+
+  // Logo
+  renderLogo();
 
   // Check if waitlist is active
   const isWaitlistActive = config.waitlist_active === '1';
@@ -567,6 +581,7 @@ function renderPage() {
   if (isStoreActive && !isWaitlistActive) {
     shopSection.style.display = 'block';
     renderProducts();
+    startHeroSlideshow();
   } else {
     shopSection.style.display = 'none';
   }
@@ -606,9 +621,13 @@ function renderProducts() {
   grid.innerHTML = products.map((p, i) => {
     const price = (p.price_cents / 100).toFixed(2);
     const imgSrc = p.image_url || `images/img-${i}.jpg`;
+    const img2 = p.image_url_2 ? `<img src="${p.image_url_2}" alt="${p.name}" class="product-img product-img-2" loading="lazy">` : '';
     return `
       <div class="product-card" onclick="openDetail(${p.id})">
-        <img src="${imgSrc}" alt="${p.name}" class="product-img" loading="lazy">
+        <div class="product-img-wrap">
+          <img src="${imgSrc}" alt="${p.name}" class="product-img" loading="lazy">
+          ${img2}
+        </div>
         <div class="product-name">${p.name}</div>
         <div class="product-colorway">${p.colorway || 'Pioneer'}</div>
         <div class="product-price">$${price}</div>
@@ -696,12 +715,39 @@ function getRandomColor() {
 }
 
 function changeHeroImage(i) {
+  heroIndex = i;
   const product = products[i];
   const img = document.getElementById('heroImg');
   img.src = product.image_url || `images/img-${i}.jpg`;
   document.querySelectorAll('.hcp-dot').forEach((d, idx) => {
     d.classList.toggle('active', idx === i);
   });
+}
+
+function startHeroSlideshow() {
+  if (heroTimer) clearInterval(heroTimer);
+  const interval = parseInt(config.hero_slide_interval || '1000');
+  if (!products.length || interval <= 0) return;
+  heroTimer = setInterval(() => {
+    heroIndex = (heroIndex + 1) % Math.min(products.length, 8);
+    changeHeroImage(heroIndex);
+  }, interval);
+}
+
+function renderLogo() {
+  const el = document.getElementById('logoContainer');
+  if (!el) return;
+  const type = config.logo_type || 'text';
+  const text = config.logo_text || 'strap';
+  const imgUrl = config.logo_image_url || '';
+  if (type === 'image' && imgUrl) {
+    el.innerHTML = `<img src="${imgUrl}" alt="Logo" style="height:40px;object-fit:contain;display:block;">`;
+  } else {
+    const p = text.indexOf('p');
+    el.innerHTML = p >= 0
+      ? text.slice(0, p) + '<em>' + text[p] + '</em>' + text.slice(p + 1)
+      : text;
+  }
 }
 
 // ── MODAL ──

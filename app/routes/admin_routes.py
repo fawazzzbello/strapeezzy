@@ -1,8 +1,9 @@
 # app/routes/admin_routes.py
 import asyncio
 import json
+import os
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Request
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Request, UploadFile, File
 from sqlalchemy.orm import Session
 
 from app.models.database import get_db, SiteConfig, ActivityLog, EmailCampaign, WaitlistEntry, AdminUser, Role
@@ -87,6 +88,10 @@ DEFAULT_CONFIG = {
     "waitlist_active": "1",
     "store_active": "1",
     "sms_notifications": "1",
+    "hero_slide_interval": "1000",
+    "logo_type": "text",
+    "logo_text": "strap",
+    "logo_image_url": "",
 }
 
 
@@ -127,6 +132,10 @@ async def get_config_public(db: Session = Depends(get_db)):
         "waitlist_active": cfg.get("waitlist_active", "1"),
         "store_active": cfg.get("store_active", "1"),
         "waitlist_fee": cfg.get("waitlist_fee", "0"),
+        "hero_slide_interval": cfg.get("hero_slide_interval", "1000"),
+        "logo_type": cfg.get("logo_type", "text"),
+        "logo_text": cfg.get("logo_text", "strap"),
+        "logo_image_url": cfg.get("logo_image_url", ""),
     }
 
 
@@ -320,6 +329,29 @@ async def create_admin_user(
         "role": user.role,
         "is_active": user.is_active,
     }
+
+
+# ── GENERIC IMAGE UPLOAD ──
+UPLOAD_DIR = "public/images"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+@router.post("/upload-image")
+async def upload_image(
+    file: UploadFile = File(...),
+    current_user: AdminUser = Depends(require_roles(Role.ADMIN, Role.SUPERADMIN)),
+):
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+    safe_name = file.filename.replace(" ", "-").split("/")[-1]
+    filename = f"upload-{int(datetime.now().timestamp())}-{safe_name}"
+    filepath = os.path.join(UPLOAD_DIR, filename)
+    try:
+        content = await file.read()
+        with open(filepath, "wb") as f:
+            f.write(content)
+        return {"url": f"/images/{filename}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
 
 # ── ACTIVITY LOG ──
