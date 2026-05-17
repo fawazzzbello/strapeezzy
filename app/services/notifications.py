@@ -147,7 +147,7 @@ def _send_email_sync(to_email: str, to_name: Optional[str], subject: str, html_b
 
 
 async def send_email(to_email: str, to_name: Optional[str], subject: str, html_body: str) -> bool:
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, _send_email_sync, to_email, to_name, subject, html_body)
 
 
@@ -184,7 +184,7 @@ async def send_sms(to_phone: str, message: str) -> bool:
         return False
     try:
         from twilio.rest import Client
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
 
         def _send():
             client = Client(account_sid, auth_token)

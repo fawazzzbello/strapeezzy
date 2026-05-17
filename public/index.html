@@ -73,7 +73,6 @@ nav{
   min-height:100svh;padding-top:var(--header-h);
   display:flex;flex-direction:column;
 }
-@media(min-width:768px){flex-direction:row;}
 @media(min-width:768px){
   .hero{display:grid;grid-template-columns:55% 45%;min-height:100vh;}
 }
@@ -324,6 +323,13 @@ h1 .c2{color:var(--teal);}
 .modal-bg.open{display:flex;}
 .modal{
   background:var(--white);max-width:500px;width:100%;border-radius:0;
+  max-height:90svh;overflow-y:auto;
+}
+@media(max-width:479px){
+  .modal{max-width:100%;margin:0;}
+  .modal-header,.modal-product{padding:16px;}
+  .modal-body{padding:16px;}
+  .modal-row{grid-template-columns:1fr;}
 }
 .modal-header{
   display:flex;align-items:center;justify-content:space-between;
@@ -356,19 +362,6 @@ h1 .c2{color:var(--teal);}
 .modal-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .modal-row .modal-input{margin-bottom:16px;}
 #payment-element{margin-bottom:16px;}
-#card-errors{color:#cc1c3a;font-size:13px;margin-bottom:16px;}
-select.modal-input{
-  appearance:none;-webkit-appearance:none;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M0 0l6 8 6-8z' fill='%23333'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 12px center;
-  padding-right:32px;
-}
-.back-btn{
-  background:none;border:none;font-size:13px;color:#777;cursor:pointer;
-  margin-bottom:16px;padding:0;text-decoration:underline;
-}
-.back-btn:hover{color:var(--black);}
-#continueBtn,#payBtn,.waitlist-join-btn{
 #card-errors{color:#cc1c3a;font-size:13px;margin-bottom:16px;min-height:20px;}
 #payBtn,#continueBtn,.waitlist-join-btn{
   width:100%;background:var(--black);color:var(--yellow);
@@ -378,10 +371,6 @@ select.modal-input{
 }
 #continueBtn:hover:not(:disabled),#payBtn:hover:not(:disabled),.waitlist-join-btn:hover:not(:disabled){background:var(--yellow);color:var(--black);}
 #continueBtn:disabled,#payBtn:disabled,.waitlist-join-btn:disabled{opacity:0.6;cursor:not-allowed;}
-.stripe-badge{
-  font-size:12px;color:#777;margin-top:12px;text-align:center;
-#payBtn:hover:not(:disabled),#continueBtn:hover:not(:disabled),.waitlist-join-btn:hover:not(:disabled){background:var(--yellow);color:var(--black);}
-#payBtn:disabled,#continueBtn:disabled,.waitlist-join-btn:disabled{opacity:0.6;cursor:not-allowed;}
 .stripe-badge{font-size:12px;color:#777;margin-top:12px;text-align:center;}
 .checkout-step{display:none;}
 .checkout-step.active{display:block;}
@@ -399,20 +388,13 @@ select.modal-input{
 }
 .back-link:hover{color:var(--black);}
 select.modal-input{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23555' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;cursor:pointer;}
-#paySuccess{
-  display:none;padding:40px 24px;text-align:center;
-}
+#paySuccess{display:none;padding:40px 24px;text-align:center;}
 #paySuccess.show{display:block;}
-#paySuccess h3{
-  font-family:'Bebas Neue',sans-serif;font-size:24px;margin-bottom:12px;
-}
+#paySuccess h3{font-family:'Bebas Neue',sans-serif;font-size:24px;margin-bottom:12px;}
 #paySuccess p{font-size:14px;color:#777;margin-bottom:20px;}
 #modalForm{display:block;}
-#modalForm.hidden{display:none;}
-.fee-notice{
-  background:#f0f0f0;padding:12px;border-left:3px solid var(--yellow);
-  font-size:13px;color:#555;margin-bottom:16px;
-}
+.fee-notice{background:#f0f0f0;padding:12px;border-left:3px solid var(--yellow);font-size:13px;color:#555;margin-bottom:16px;}
+#wlStatus{font-size:14px;margin-top:12px;min-height:20px;}
 </style>
 </head>
 <body>
@@ -470,7 +452,8 @@ select.modal-input{-webkit-appearance:none;appearance:none;background-image:url(
     <input type="email" id="wlEmail" placeholder="your@email.com" style="width:100%;padding:12px;border:1px solid #ddd;font-size:14px;margin-bottom:12px;">
     <input type="text" id="wlName" placeholder="Your name" style="width:100%;padding:12px;border:1px solid #ddd;font-size:14px;margin-bottom:12px;">
     <div id="feeSection"></div>
-    <button class="btn-dark" onclick="joinWaitlist()" style="width:100%;">Join Waitlist</button>
+    <button class="btn-dark" id="wlBtn" onclick="joinWaitlist()" style="width:100%;">Join Waitlist</button>
+    <div id="wlStatus"></div>
   </div>
 </section>
 
@@ -949,7 +932,7 @@ function scrollToShop() {
 function loadStripe() {
   if (stripe) return;
   const pk = localStorage.getItem('stripe_pk');
-  if (!pk) return;
+  if (!pk || typeof Stripe === 'undefined') return;
   try { stripe = Stripe(pk); } catch(e) { console.warn('Stripe init failed', e); }
 }
 
@@ -1086,21 +1069,25 @@ function showSuccess() {
 async function joinWaitlist() {
   const email = document.getElementById('wlEmail').value.trim();
   const name = document.getElementById('wlName').value.trim();
+  const statusEl = document.getElementById('wlStatus');
+  const btn = document.getElementById('wlBtn');
+
+  statusEl.textContent = '';
+  statusEl.style.color = '#555';
 
   if (!email || !name) {
-    alert('Please fill in both fields');
+    statusEl.textContent = 'Please fill in your name and email.';
+    statusEl.style.color = '#cc1c3a';
+    return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    statusEl.textContent = 'Please enter a valid email address.';
+    statusEl.style.color = '#cc1c3a';
     return;
   }
 
-  const isWaitlistActive = config.waitlist_active === '1';
-  const hasWaitlistFee = config.waitlist_fee === '1';
-
-  if (isWaitlistActive && hasWaitlistFee) {
-    // Charge 10% fee for waitlist
-    alert('Redirecting to payment for waitlist reservation fee...');
-    // In a real implementation, this would process the 10% payment
-    // For now, just add to waitlist
-  }
+  btn.disabled = true;
+  btn.textContent = 'Joining…';
 
   try {
     const res = await fetch('/api/waitlist/join', {
@@ -1108,17 +1095,27 @@ async function joinWaitlist() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, name })
     });
+    const data = await res.json().catch(() => ({}));
 
     if (res.ok) {
-      alert('Thanks for joining! Check your email for updates.');
+      statusEl.textContent = `✓ You're on the list${data.position ? ` — #${data.position}` : ''}! Check your email.`;
+      statusEl.style.color = '#22a045';
       document.getElementById('wlEmail').value = '';
       document.getElementById('wlName').value = '';
       loadData();
+    } else if (res.status === 409) {
+      statusEl.textContent = 'You\'re already on the waitlist!';
+      statusEl.style.color = '#f5c600';
     } else {
-      alert('Failed to join waitlist');
+      statusEl.textContent = data.detail || 'Something went wrong. Please try again.';
+      statusEl.style.color = '#cc1c3a';
     }
   } catch (err) {
-    alert('Error: ' + err.message);
+    statusEl.textContent = 'Network error. Please check your connection and try again.';
+    statusEl.style.color = '#cc1c3a';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Join Waitlist';
   }
 }
 
@@ -1132,7 +1129,7 @@ async function init() {
     const pkRes = await fetch('/api/stripe/publishable-key');
     if (pkRes.ok) {
       const data = await pkRes.json();
-      if (data.key) localStorage.setItem('stripe_pk', data.key);
+      if (data.key) { localStorage.setItem('stripe_pk', data.key); loadStripe(); }
     }
   } catch (e) {
     console.warn('Failed to load Stripe key');

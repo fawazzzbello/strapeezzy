@@ -1,9 +1,11 @@
 # app/routes/waitlist.py
 import asyncio
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime, timezone
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.models.database import get_db, WaitlistEntry, SiteConfig, ActivityLog
 from app.models.schemas import WaitlistJoin, WaitlistOut, WaitlistCountsUpdate, CountsOut, NotifyAllRequest
@@ -15,6 +17,7 @@ from app.services.notifications import (
 )
 
 router = APIRouter(prefix="/api/waitlist", tags=["waitlist"])
+limiter = Limiter(key_func=get_remote_address)
 
 
 # ── CONFIG HELPERS ──
@@ -36,7 +39,8 @@ def set_cfg(db: Session, key: str, value: str):
 
 # ── PUBLIC: JOIN ──
 @router.post("/join")
-async def join_waitlist(body: WaitlistJoin, background: BackgroundTasks, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+async def join_waitlist(request: Request, body: WaitlistJoin, background: BackgroundTasks, db: Session = Depends(get_db)):
     # Check duplicate
     exists = db.query(WaitlistEntry).filter(WaitlistEntry.email == body.email).first()
     if exists:
