@@ -526,72 +526,10 @@ select.modal-input{-webkit-appearance:none;appearance:none;background-image:url(
         <div>
           <div class="modal-product-name" id="modalName">Product</div>
           <div class="modal-product-sub" id="modalSub">Colorway</div>
-          <div class="modal-product-price" id="modalPrice">$79</div>
+          <div class="modal-product-price" id="modalPrice">£79</div>
         </div>
       </div>
-      <!-- Step 1: Customer Info -->
-      <div class="modal-body" id="step1">
-        <label class="modal-label">Full Name</label>
-        <input class="modal-input" type="text" id="nameInput" placeholder="Jane Smith" autocomplete="name">
-        <label class="modal-label">Email</label>
-        <input class="modal-input" type="email" id="emailInput" placeholder="your@email.com" autocomplete="email">
-        <label class="modal-label">Phone</label>
-        <input class="modal-input" type="tel" id="phoneInput" placeholder="+44 7700 900000" autocomplete="tel">
-        <label class="modal-label">Address Line 1</label>
-        <input class="modal-input" type="text" id="addrLine1" placeholder="123 High Street" autocomplete="address-line1">
-        <div class="modal-row">
-          <div>
-            <label class="modal-label">City</label>
-            <input class="modal-input" type="text" id="addrCity" placeholder="London" autocomplete="address-level2">
-          </div>
-          <div>
-            <label class="modal-label">Postal Code</label>
-            <input class="modal-input" type="text" id="addrPostal" placeholder="SW1A 1AA" autocomplete="postal-code">
-          </div>
-        </div>
-        <label class="modal-label">Country</label>
-        <select class="modal-input" id="addrCountry" onchange="toggleStateField()" autocomplete="country">
-          <option value="GB">United Kingdom</option>
-          <option value="US">United States</option>
-          <option value="AU">Australia</option>
-          <option value="CA">Canada</option>
-          <option value="DE">Germany</option>
-          <option value="FR">France</option>
-          <option value="NL">Netherlands</option>
-          <option value="ES">Spain</option>
-          <option value="IT">Italy</option>
-          <option value="SE">Sweden</option>
-          <option value="NO">Norway</option>
-          <option value="DK">Denmark</option>
-          <option value="FI">Finland</option>
-          <option value="BE">Belgium</option>
-          <option value="CH">Switzerland</option>
-          <option value="AT">Austria</option>
-          <option value="PT">Portugal</option>
-          <option value="IE">Ireland</option>
-          <option value="NZ">New Zealand</option>
-          <option value="SG">Singapore</option>
-          <option value="JP">Japan</option>
-          <option value="AE">United Arab Emirates</option>
-          <option value="ZA">South Africa</option>
-        </select>
-        <div id="stateField" style="display:none">
-          <label class="modal-label">State</label>
-          <input class="modal-input" type="text" id="addrState" placeholder="e.g. CA" autocomplete="address-level1">
-        </div>
-        <div id="step1-errors" style="color:#cc1c3a;font-size:13px;margin-bottom:16px;"></div>
-        <button id="continueBtn" onclick="continueToPayment()">Continue to Payment</button>
-        <div class="stripe-badge"><span class="stripe-lock">🔒</span> Secured by <strong>Stripe</strong></div>
-      </div>
-      <!-- Step 2: Payment Element -->
-      <div class="modal-body" id="step2" style="display:none">
-        <button class="back-btn" onclick="backToInfo()">← Back to details</button>
-        <div id="payment-element"></div>
-        <div id="card-errors"></div>
-        <button id="payBtn" onclick="handlePay()">Pay Securely</button>
-        <div class="stripe-badge"><span class="stripe-lock">🔒</span> Powered by <strong>Stripe</strong> · Card, Klarna, Clearpay &amp; more</div>
       <div class="modal-body" id="paymentBody">
-
         <!-- Step 1: Customer info -->
         <div id="checkoutStep1" class="checkout-step active">
           <div class="modal-row">
@@ -608,6 +546,8 @@ select.modal-input{-webkit-appearance:none;appearance:none;background-image:url(
           <input class="modal-input" type="email" id="emailInput" placeholder="your@email.com" autocomplete="email">
           <label class="modal-label">Address Line 1</label>
           <input class="modal-input" type="text" id="addrLine1" placeholder="123 High Street" autocomplete="address-line1">
+          <label class="modal-label">Address Line 2 <span style="font-weight:400;color:#aaa">(optional)</span></label>
+          <input class="modal-input" type="text" id="addrLine2" placeholder="Flat 4, Floor 2" autocomplete="address-line2">
           <div class="modal-row">
             <div>
               <label class="modal-label">City</label>
@@ -657,7 +597,6 @@ select.modal-input{-webkit-appearance:none;appearance:none;background-image:url(
               <span class="pm-chip">💳 Card</span>
               <span class="pm-chip">🍃 Klarna</span>
               <span class="pm-chip">⬛ Clearpay</span>
-              <span class="pm-chip">🔵 PayPal</span>
               <span class="pm-chip">🍎 Apple Pay</span>
               <span class="pm-chip">G Google Pay</span>
             </div>
@@ -665,16 +604,14 @@ select.modal-input{-webkit-appearance:none;appearance:none;background-image:url(
           <div id="step1-errors" style="color:#cc1c3a;font-size:13px;margin-bottom:12px;min-height:18px"></div>
           <button id="continueBtn" onclick="continueToPayment()">Continue to Payment →</button>
         </div>
-
         <!-- Step 2: Payment method -->
         <div id="checkoutStep2" class="checkout-step">
           <button class="back-link" onclick="backToInfo()">← Back to your details</button>
           <div id="payment-element"></div>
           <div id="card-errors"></div>
           <button id="payBtn" onclick="handlePay()">Pay Securely</button>
-          <div class="stripe-badge">🔒 Encrypted & secure · Powered by <strong>Stripe</strong></div>
+          <div class="stripe-badge">🔒 Encrypted &amp; secure · Powered by <strong>Stripe</strong></div>
         </div>
-
       </div>
     </div>
     <div id="paySuccess">
@@ -690,7 +627,6 @@ select.modal-input{-webkit-appearance:none;appearance:none;background-image:url(
 let config = {};
 let products = [];
 let currentProduct = {};
-let stripe, stripeElements, paymentElement, currentPiSecret;
 let stripe, stripeElements, paymentElement;
 let heroIndex = 0;
 let heroTimer = null;
@@ -965,36 +901,24 @@ function openModal(productId) {
   document.getElementById('modalSub').textContent = product.colorway || 'Pioneer';
   document.getElementById('modalPrice').textContent = '£' + price;
   document.getElementById('modalImg').src = imgSrc;
-  document.getElementById('continueBtn').textContent = 'Continue to Payment';
+  document.getElementById('modalForm').style.display = '';
+  document.getElementById('paySuccess').classList.remove('show');
+  document.getElementById('step1-errors').textContent = '';
+  document.getElementById('card-errors').textContent = '';
+  document.getElementById('continueBtn').textContent = 'Continue to Payment →';
   document.getElementById('continueBtn').disabled = false;
-  document.getElementById('step1').style.display = 'block';
-  document.getElementById('step2').style.display = 'none';
-  document.getElementById('step1-errors').textContent = '';
-  document.getElementById('card-errors').textContent = '';
-  document.getElementById('modalForm').style.display = '';
-  document.getElementById('paySuccess').classList.remove('show');
-  document.getElementById('modalBg').classList.add('open');
-  document.body.style.overflow = 'hidden';
-  if (paymentElement) { paymentElement.destroy(); paymentElement = null; }
-  loadStripe();
-  document.getElementById('modalForm').style.display = '';
-  document.getElementById('paySuccess').classList.remove('show');
-  document.getElementById('card-errors').textContent = '';
-  document.getElementById('step1-errors').textContent = '';
 
-  // Reset to step 1
   document.getElementById('checkoutStep1').classList.add('active');
   document.getElementById('checkoutStep2').classList.remove('active');
 
-  // Destroy any existing payment element
-  if (paymentElement) { try { paymentElement.destroy(); } catch(_) {} paymentElement = null; }
+  if (paymentElement) { try { paymentElement.destroy(); } catch(_){} paymentElement = null; }
   stripeElements = null;
   document.getElementById('payment-element').innerHTML = '';
 
   document.getElementById('modalBg').classList.add('open');
   document.body.style.overflow = 'hidden';
 
-  if (!stripe) initStripe();
+  if (!stripe) loadStripe();
 }
 
 function closeModal() {
@@ -1029,44 +953,23 @@ function loadStripe() {
   try { stripe = Stripe(pk); } catch(e) { console.warn('Stripe init failed', e); }
 }
 
-function toggleStateField() {
-  const country = document.getElementById('addrCountry').value;
-  document.getElementById('stateField').style.display = country === 'US' ? 'block' : 'none';
-}
-
-function getShippingAddress() {
-  const line1 = document.getElementById('addrLine1').value.trim();
-  const city = document.getElementById('addrCity').value.trim();
-  const postal = document.getElementById('addrPostal').value.trim();
-  const country = document.getElementById('addrCountry').value;
-  const state = country === 'US' ? document.getElementById('addrState').value.trim() : undefined;
-  return { line1, city, postal_code: postal, country, state };
-}
-
-async function continueToPayment() {
-  const name = document.getElementById('nameInput').value.trim();
-  try {
-    const pk = localStorage.getItem('stripe_pk');
-    if (!pk) return;
-    stripe = Stripe(pk);
-  } catch (e) {
-    console.warn('Stripe init failed', e);
-  }
-}
-
-function getShippingAddress() {
-  return {
-    line1: document.getElementById('addrLine1').value.trim(),
-    city: document.getElementById('addrCity').value.trim(),
-    postal_code: document.getElementById('addrPostal').value.trim(),
-    country: document.getElementById('addrCountry').value,
-    state: document.getElementById('addrState').value.trim() || undefined,
-  };
-}
+function initStripe() { loadStripe(); }
 
 function toggleStateField() {
   const country = document.getElementById('addrCountry').value;
   document.getElementById('stateFieldWrap').style.display = country === 'US' ? '' : 'none';
+}
+
+function getShippingAddress() {
+  const line1 = document.getElementById('addrLine1').value.trim();
+  const line2 = document.getElementById('addrLine2')?.value.trim() || '';
+  return {
+    line1: line2 ? `${line1}, ${line2}` : line1,
+    city: document.getElementById('addrCity').value.trim(),
+    postal_code: document.getElementById('addrPostal').value.trim(),
+    country: document.getElementById('addrCountry').value,
+    state: document.getElementById('addrState')?.value.trim() || undefined,
+  };
 }
 
 async function continueToPayment() {
@@ -1078,37 +981,19 @@ async function continueToPayment() {
 
   errEl.textContent = '';
   if (!name || !email) { errEl.textContent = 'Name and email are required.'; return; }
-  if (!addr.line1 || !addr.city || !addr.postal_code) { errEl.textContent = 'Please fill in your full shipping address.'; return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errEl.textContent = 'Please enter a valid email address.'; return; }
+  if (!addr.line1 || !addr.city || !addr.postal_code || !addr.country) { errEl.textContent = 'Please fill in your full shipping address.'; return; }
   if (addr.country === 'US' && !addr.state) { errEl.textContent = 'State is required for US addresses.'; return; }
 
-  if (!stripe) { loadStripe(); }
-  if (!stripe) { errEl.textContent = 'Payment system unavailable. Please try again later.'; return; }
-
-  const btn = document.getElementById('continueBtn');
-  btn.disabled = true;
-  btn.textContent = 'Loading…';
-  if (!name || !email || !phone || !addr.line1 || !addr.city || !addr.postal_code || !addr.country) {
-    errEl.textContent = 'Please fill in all fields to continue.';
-    return;
-  }
-  if (addr.country === 'US' && !addr.state) {
-    errEl.textContent = 'Please enter your state for US shipping.';
-    return;
-  }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    errEl.textContent = 'Please enter a valid email address.';
-    return;
-  }
-  errEl.textContent = '';
+  if (!stripe) loadStripe();
+  if (!stripe) { errEl.textContent = 'Payment system unavailable. Please try again.'; return; }
 
   const btn = document.getElementById('continueBtn');
   btn.disabled = true;
   btn.textContent = 'Loading payment…';
 
-  const shippingStr = [addr.line1, addr.city, addr.postal_code, addr.country, addr.state].filter(Boolean).join(', ');
-
   try {
-    const addrString = [addr.line1, addr.city, addr.postal_code, addr.country].join(', ');
+    const shippingStr = [addr.line1, addr.city, addr.postal_code, addr.country, addr.state].filter(Boolean).join(', ');
     const res = await fetch('/api/stripe/create-payment-intent', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1117,92 +1002,25 @@ async function continueToPayment() {
         customer_email: email,
         customer_name: name,
         customer_phone: phone,
-        shipping_address: addrString
-      })
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || 'Could not create payment. Please try again.');
         shipping_address: shippingStr,
       })
     });
-
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.detail || 'Could not start checkout. Please try again.');
     }
     const data = await res.json();
-    currentPiSecret = data.client_secret;
 
     const price = (currentProduct.price_cents / 100).toFixed(2);
-    stripeElements = stripe.elements({ clientSecret: currentPiSecret, appearance: { theme: 'flat', variables: { colorPrimary: '#f5c800', fontFamily: 'system-ui, sans-serif' } } });
-    paymentElement = stripeElements.create('payment', {
-      fields: { billingDetails: { name: 'never', email: 'never' } }
-    });
-    document.getElementById('step1').style.display = 'none';
-    document.getElementById('step2').style.display = 'block';
-    document.getElementById('payBtn').textContent = `Pay — £${price}`;
-    paymentElement.mount('#payment-element');
-  } catch (err) {
-    errEl.textContent = err.message || 'Error loading payment. Please try again.';
-    btn.disabled = false;
-    btn.textContent = 'Continue to Payment';
-  }
-}
-
-function backToInfo() {
-  document.getElementById('step2').style.display = 'none';
-  document.getElementById('step1').style.display = 'block';
-  document.getElementById('continueBtn').disabled = false;
-  document.getElementById('continueBtn').textContent = 'Continue to Payment';
-  if (paymentElement) { paymentElement.destroy(); paymentElement = null; }
-}
-
-async function handlePay() {
-  const btn = document.getElementById('payBtn');
-  btn.disabled = true;
-  btn.textContent = 'Processing…';
-  document.getElementById('card-errors').textContent = '';
-
-  const name = document.getElementById('nameInput').value.trim();
-  const email = document.getElementById('emailInput').value.trim();
-  const addr = getShippingAddress();
-
-  try {
-    const result = await stripe.confirmPayment({
-      elements: stripeElements,
-      confirmParams: {
-        return_url: window.location.origin + '/?payment=success',
-        payment_method_data: {
-          billing_details: { name, email }
-        },
-        shipping: {
-          name,
-          phone: document.getElementById('phoneInput').value.trim() || undefined,
-          address: addr
-        }
-      },
-      redirect: 'if_required'
-    });
-
-    if (result.error) {
-      throw new Error(result.error.message);
-    }
-    if (!stripe) initStripe();
-    if (!stripe) throw new Error('Payment system unavailable. Please refresh and try again.');
-
     stripeElements = stripe.elements({ clientSecret: data.client_secret, appearance: { theme: 'flat', variables: { colorPrimary: '#0D0D0D', colorBackground: '#F5F0E8', fontFamily: 'DM Sans, sans-serif' } } });
     paymentElement = stripeElements.create('payment', { layout: 'tabs' });
     paymentElement.mount('#payment-element');
 
-    // Show step 2
     document.getElementById('checkoutStep1').classList.remove('active');
     document.getElementById('checkoutStep2').classList.add('active');
-
-    const price = (currentProduct.price_cents / 100).toFixed(2);
     document.getElementById('payBtn').textContent = `Pay Securely — £${price}`;
   } catch (err) {
-    errEl.textContent = err.message || 'Something went wrong.';
+    errEl.textContent = err.message || 'Something went wrong. Please try again.';
   } finally {
     btn.disabled = false;
     btn.textContent = 'Continue to Payment →';
@@ -1213,6 +1031,9 @@ function backToInfo() {
   document.getElementById('checkoutStep2').classList.remove('active');
   document.getElementById('checkoutStep1').classList.add('active');
   document.getElementById('card-errors').textContent = '';
+  if (paymentElement) { try { paymentElement.destroy(); } catch(_){} paymentElement = null; }
+  stripeElements = null;
+  document.getElementById('payment-element').innerHTML = '';
 }
 
 async function handlePay() {
@@ -1221,6 +1042,7 @@ async function handlePay() {
   const btn = document.getElementById('payBtn');
   btn.disabled = true;
   btn.textContent = 'Processing…';
+  document.getElementById('card-errors').textContent = '';
 
   const name = document.getElementById('fullNameInput').value.trim();
   const email = document.getElementById('emailInput').value.trim();
@@ -1232,21 +1054,25 @@ async function handlePay() {
       elements: stripeElements,
       confirmParams: {
         payment_method_data: {
-          billing_details: { name, email, phone, address: { line1: addr.line1, city: addr.city, postal_code: addr.postal_code, country: addr.country, state: addr.state || '' } }
+          billing_details: {
+            name, email, phone,
+            address: { line1: addr.line1, city: addr.city, postal_code: addr.postal_code, country: addr.country }
+          }
         },
-        shipping: { name, address: addr },
+        shipping: {
+          name,
+          address: { line1: addr.line1, city: addr.city, postal_code: addr.postal_code, country: addr.country, state: addr.state || '' }
+        },
         return_url: window.location.href,
       },
       redirect: 'if_required',
     });
-
     if (result.error) throw new Error(result.error.message);
     showSuccess();
   } catch (err) {
     document.getElementById('card-errors').textContent = err.message || 'Payment failed. Please try again.';
     btn.disabled = false;
     const price = (currentProduct.price_cents / 100).toFixed(2);
-    btn.textContent = `Pay — £${price}`;
     btn.textContent = `Pay Securely — £${price}`;
   }
 }
