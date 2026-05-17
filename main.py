@@ -26,10 +26,10 @@ def seed_db():
     db = SessionLocal()
     try:
         if db.query(AdminUser).count() == 0:
-            pwd = os.getenv("INIT_ADMIN_PASSWORD", "strapeezzy2024!")[:72]
+            pwd = os.getenv("INIT_ADMIN_PASSWORD", "lidle2024!")[:72]
             admin = AdminUser(
                 username=os.getenv("INIT_ADMIN_USERNAME", "admin"),
-                email=os.getenv("INIT_ADMIN_EMAIL", "admin@strapeezzy.com"),
+                email=os.getenv("INIT_ADMIN_EMAIL", "admin@lidle.com"),
                 full_name="Super Admin",
                 password_hash=hash_password(pwd),
                 role=Role.SUPERADMIN,
@@ -40,16 +40,16 @@ def seed_db():
 
         defaults = {
             "waitlist_count": "0", "maillist_count": "0", "launch_date": "2026-07-01",
-            "site_title": "Strapeezzy — Pioneer Straps for AP × Swatch Royalpop",
-            "hero_headline_line1": "STRAP", "hero_headline_line2": "YOUR", "hero_headline_line3": "VIBE.",
-            "hero_subtitle": "Premium Pioneer case-straps for the AP × Swatch Royalpop. Eight colorways.",
-            "strap_price": "79", "shipping_threshold": "150",
-            "announcement_bar": "Free shipping on orders over £150 · Ships worldwide",
-            "announcement_active": "1", "waitlist_active": "1", "store_active": "1", "sms_notifications": "1", "waitlist_fee": "0",
-            "hero_slide_interval": "1000", "logo_type": "text", "logo_text": "strap", "logo_image_url": "",
-            "hero_badge": "NEW DROP", "hero_cta1_text": "Shop now", "hero_cta2_text": "Join waitlist",
-            "nav_btn_text": "SHOP", "nav_link1_text": "SHOP", "nav_link2_text": "WAITLIST",
-            "products_title": "Eight Colorways", "waitlist_title": "Join the Waitlist",
+            "site_title": "Lidle-By-Lidle — Personal Shopper Store",
+            "hero_headline_line1": "LIDLE", "hero_headline_line2": "BY", "hero_headline_line3": "LIDLE",
+            "hero_subtitle": "Your personal shopper marketplace. Buy premium products in easy instalments.",
+            "shipping_threshold": "150",
+            "announcement_bar": "Welcome to Lidle-By-Lidle — Personal shopping made easy",
+            "announcement_active": "1", "waitlist_active": "0", "store_active": "1", "sms_notifications": "0", "waitlist_fee": "0",
+            "hero_slide_interval": "3000", "logo_type": "text", "logo_text": "lidle", "logo_image_url": "",
+            "hero_badge": "SHOP SMART", "hero_cta1_text": "Browse Deals", "hero_cta2_text": "Submit Order",
+            "nav_btn_text": "BROWSE", "nav_link1_text": "SHOP", "nav_link2_text": "HOW IT WORKS",
+            "products_title": "Featured Deals", "waitlist_title": "Join the Waitlist",
             "waitlist_description": "Be the first to know when we launch. Get exclusive early-access pricing.",
             "waitlist_btn_text": "Join Waitlist",
         }
@@ -58,159 +58,9 @@ def seed_db():
                 db.add(SiteConfig(key=key, value=value))
         db.commit()
 
-        # Upsert the canonical 8 Delugs Royal Pop products by SKU
-        canonical_skus = {
-            "SZCS-BLAUEACHT", "SZCS-GREENEIGHT", "SZCS-HUITBLANC",
-            "SZCS-LANBA", "SZCS-OCHONEGRO", "SZCS-OTGROZ",
-            "SZCS-OTTOROSSO", "SZCS-ORENJIHACHI",
-        }
-        products_seed = [
-            {
-                "sku": "SZCS-OTGROZ",
-                "name": "OTG ROZ",
-                "description": (
-                    "The OTG ROZ — Romanian for 'pink eight' — is the pink Savonnette in the "
-                    "AP × Swatch Royal Pop. Its teal Grande Tapisserie dial, yellow octagonal bezel, "
-                    "and baby-pink bioceramic case make it the most colour-forward piece in the collection. "
-                    "Our Pioneer case-strap rotates the crown to roughly 2 o'clock for natural wrist "
-                    "orientation while keeping the small-seconds subdial at 9 fully readable. "
-                    "Compatible with Savonnette layout (crown at 3). Hand-wound Sistem51, 90hr power reserve."
-                ),
-                "price_cents": 15000,
-                "colorway": "Pink / Teal / Yellow",
-                "image_url": "/images/otg-roz.jpg",
-                "stock_quantity": 25,
-            },
-            {
-                "sku": "SZCS-OTTOROSSO",
-                "name": "Otto Rosso",
-                "description": (
-                    "The Otto Rosso — Italian for 'red eight' — brings Royal Oak DNA in a palette "
-                    "that splits the difference between salmon-dial collector lore and bold Pop Art colour. "
-                    "The blush-pink Grande Tapisserie dial sits behind a crimson octagonal bezel and a "
-                    "matching red bioceramic Savonnette case. Our Pioneer case-strap turns this pocket "
-                    "watch into a wrist-ready driver's watch. Compatible with Savonnette layout (crown at 3). "
-                    "Hand-wound Sistem51, 90hr power reserve."
-                ),
-                "price_cents": 15000,
-                "colorway": "Red / Salmon Pink",
-                "image_url": "/images/otto-rosso.jpg",
-                "stock_quantity": 22,
-            },
-            {
-                "sku": "SZCS-GREENEIGHT",
-                "name": "Green Eight",
-                "description": (
-                    "Green Eight is the Royal Pop in full monochrome — case, bezel, dial rendered in the "
-                    "same bold forest green bioceramic. Luminous green hands disappear into the dial until "
-                    "the light catches them just right. Our Pioneer case-strap completes the look with a "
-                    "matching forest green rubber, turning the six-Lépine pocket watch into a statement "
-                    "wristwatch. Compatible with Lépine layout (crown at 12). Hand-wound Sistem51, 90hr power reserve."
-                ),
-                "price_cents": 15000,
-                "colorway": "All Green",
-                "image_url": "/images/green-eight.jpg",
-                "stock_quantity": 40,
-            },
-            {
-                "sku": "SZCS-HUITBLANC",
-                "name": "Huit Blanc",
-                "description": (
-                    "Huit Blanc — French for 'white eight' — runs a clean white bioceramic case against "
-                    "eight multicoloured bezel screws, one for each colorway in the collection. The Grand "
-                    "Tapisserie dial in white adds texture without noise. Our Pioneer case-strap in matching "
-                    "white rubber lets each rainbow screw do the talking. "
-                    "Compatible with Lépine layout (crown at 12). Hand-wound Sistem51, 90hr power reserve."
-                ),
-                "price_cents": 15000,
-                "colorway": "White / Rainbow",
-                "image_url": "/images/huit-blanc.jpg",
-                "stock_quantity": 35,
-            },
-            {
-                "sku": "SZCS-BLAUEACHT",
-                "name": "Blaue Acht",
-                "description": (
-                    "Blaue Acht — German for 'blue eight' — contradicts itself in the best way: the watch "
-                    "reads lime-green-and-sky rather than classic blue, making it the most surprising "
-                    "colorway in the lineup. The pale teal bezel against the acid-lime bioceramic case "
-                    "shouldn't work. It absolutely does. Our Pioneer case-strap leans into the contrast "
-                    "with a lime rubber. Compatible with Lépine layout (crown at 12). "
-                    "Hand-wound Sistem51, 90hr power reserve."
-                ),
-                "price_cents": 15000,
-                "colorway": "Lime / Sky Blue",
-                "image_url": "/images/blaue-acht.jpg",
-                "stock_quantity": 30,
-            },
-            {
-                "sku": "SZCS-OCHONEGRO",
-                "name": "Ocho Negro",
-                "description": (
-                    "Ocho Negro — Spanish for 'black eight' — is the straight man of the lineup. Matte "
-                    "black bioceramic case, stark white octagonal bezel, black Grande Tapisserie dial with "
-                    "white indices. The contrast between inky black and creamy white is almost unexpectedly "
-                    "elegant for a Pop Art watch. Our Pioneer case-strap in matte black rubber makes this "
-                    "the most wearable Royal Pop of all eight. Compatible with Lépine layout (crown at 12). "
-                    "Hand-wound Sistem51, 90hr power reserve."
-                ),
-                "price_cents": 15000,
-                "colorway": "Black / White",
-                "image_url": "/images/ocho-negro.jpg",
-                "stock_quantity": 50,
-            },
-            {
-                "sku": "SZCS-LANBA",
-                "name": "Lan Ba",
-                "description": (
-                    "Lan Ba — Chinese for 'blue eight' (蓝八) — pairs powder-blue bioceramic with a deep "
-                    "navy Grande Tapisserie dial. The small seconds subdial at 9 o'clock adds a classical "
-                    "touch to an otherwise very contemporary palette. Our Pioneer case-strap in powder-blue "
-                    "rubber lets the navy dial take centre stage. Compatible with Savonnette layout (crown at 3). "
-                    "Hand-wound Sistem51, 90hr power reserve."
-                ),
-                "price_cents": 15000,
-                "colorway": "Baby Blue / Navy",
-                "image_url": "/images/lan-ba.jpg",
-                "stock_quantity": 28,
-            },
-            {
-                "sku": "SZCS-ORENJIHACHI",
-                "name": "Orenji Hachi",
-                "description": (
-                    "Orenji Hachi — Japanese for 'orange eight' (オレンジ八) — is the sports model of the "
-                    "Royal Pop. Deep navy bioceramic meets eight vivid orange bezel screws and orange baton "
-                    "indices on an all-navy dial. The most striking contrast in the collection and the one "
-                    "most at home on an active wrist. Our Pioneer case-strap pairs navy rubber with orange "
-                    "accent stitching to match. Compatible with Lépine layout (crown at 12). "
-                    "Hand-wound Sistem51, 90hr power reserve."
-                ),
-                "price_cents": 15000,
-                "colorway": "Navy / Orange",
-                "image_url": "/images/orenji-hachi.jpg",
-                "stock_quantity": 32,
-            },
-        ]
-        # Deactivate non-canonical products (e.g. test products) without deleting them
-        non_canonical = db.query(Product).filter(
-            Product.sku.notin_(canonical_skus), Product.is_active == True
-        ).count()
-        if non_canonical:
-            db.query(Product).filter(Product.sku.notin_(canonical_skus)).update(
-                {"is_active": False}, synchronize_session=False
-            )
-        # Seed canonical products — INSERT ONLY.
-        # Existing rows are never touched so all admin edits
-        # (price, stock, descriptions, images, active state) persist
-        # across every restart and deployment.
-        new_count = 0
-        for pd in products_seed:
-            if not db.query(Product).filter(Product.sku == pd["sku"]).first():
-                db.add(Product(**pd))
-                new_count += 1
-        db.commit()
-        if new_count:
-            print(f"✅ {new_count} new products inserted")
+        # No seed products for personal shopper - admins will post them
+        canonical_skus = set()
+        products_seed = []
 
         print("✅ DB seeded")
     except Exception as e:
@@ -226,13 +76,13 @@ async def lifespan(app: FastAPI):
         print("⚠️  WARNING: JWT_SECRET is not set or is using an insecure default. Set a strong random secret before launch!")
     init_db()
     seed_db()
-    print("🚀 Strapeezzy ready")
+    print("🚀 Lidle-By-Lidle ready")
     yield
 
 
 limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(
-    title="Strapeezzy API", version="1.0.0",
+    title="Lidle-By-Lidle API", version="1.0.0",
     lifespan=lifespan, docs_url="/api/docs", redoc_url="/api/redoc",
 )
 app.state.limiter = limiter
@@ -340,7 +190,7 @@ async def stripe_webhook_endpoint(request: Request):
 # ── HEALTH ──
 @app.get("/api/health", include_in_schema=False)
 async def health():
-    return {"status": "ok", "service": "strapeezzy"}
+    return {"status": "ok", "service": "lidle"}
 
 
 # ── INIT ADMIN (first-time setup) ──
@@ -396,4 +246,4 @@ async def serve_frontend(path: str = ""):
     f = PUBLIC_DIR / "index.html"
     if f.exists():
         return FileResponse(str(f))
-    return JSONResponse({"message": "Strapeezzy API ✅", "docs": "/api/docs", "health": "/api/health", "admin": "/admin"})
+    return JSONResponse({"message": "Lidle-By-Lidle API ✅", "docs": "/api/docs", "health": "/api/health", "admin": "/admin"})

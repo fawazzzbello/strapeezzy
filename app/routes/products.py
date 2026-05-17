@@ -35,6 +35,7 @@ async def list_products(db: Session = Depends(get_db)):
             "image_url_2": p.image_url_2,
             "colorway": p.colorway,
             "stock_quantity": p.stock_quantity,
+            "gallery_images": json.loads(p.gallery_images or "[]"),
         }
         for p in products
     ]
@@ -57,6 +58,7 @@ async def get_product(product_id: int, db: Session = Depends(get_db)):
         "colorway": product.colorway,
         "stock_quantity": product.stock_quantity,
         "is_active": product.is_active,
+        "gallery_images": json.loads(product.gallery_images or "[]"),
     }
 
 
@@ -79,6 +81,7 @@ async def admin_list_products(
             "colorway": p.colorway,
             "stock_quantity": p.stock_quantity,
             "is_active": p.is_active,
+            "gallery_images": json.loads(p.gallery_images or "[]"),
             "created_at": p.created_at.isoformat(),
             "updated_at": p.updated_at.isoformat(),
         }
@@ -283,6 +286,91 @@ async def delete_product(
     db.commit()
 
     return {"success": True}
+
+
+# ── ADMIN: UPLOAD PRODUCT GALLERY IMAGE ──
+@router.post("/admin/{product_id}/gallery", tags=["admin"])
+async def upload_product_gallery(
+    product_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: AdminUser = Depends(require_roles(Role.ADMIN, Role.SUPERADMIN)),
+):
+    """Upload an image to product gallery"""
+    product = db.query(Product).filter(Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    _fname = os.path.basename(file.filename.replace('\\', '/'))
+    filename = f"{product.sku.lower()}-gallery-{len(json.loads(product.gallery_images or '[]'))}-{_fname}"
+    filepath = os.path.join(UPLOAD_DIR, filename)
+
+    try:
+        with open(filepath, "wb") as f:
+            content = await file.read()
+            f.write(content)
+        image_path = f"/images/{filename}"
+
+        # Add to gallery_images JSON list
+        gallery = json.loads(product.gallery_images or "[]")
+        gallery.append(image_path)
+        product.gallery_images = json.dumps(gallery)
+        product.updated_at = datetime.now(timezone.utc)
+        db.commit()
+
+        return {"success": True, "image_url": image_path, "gallery_count": len(gallery)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save image: {str(e)}")
+
+
+# ── ADMIN: GET PRODUCT GALLERY ──
+@router.get("/admin/{product_id}/gallery", tags=["admin"])
+async def get_product_gallery(
+    product_id: int,
+    db: Session = Depends(get_db),
+    current_user: AdminUser = Depends(require_roles(Role.ADMIN, Role.SUPERADMIN)),
+):
+    """Get all gallery images for a product"""
+    product = db.query(Product).filter(Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    gallery = json.loads(product.gallery_images or "[]")
+    return {"product_id": product_id, "gallery_images": gallery, "count": len(gallery)}
+
+
+# ── ADMIN: DELETE GALLERY IMAGE ──
+@router.delete("/admin/{product_id}/gallery/{image_index}", tags=["admin"])
+async def delete_gallery_image(
+    product_id: int,
+    image_index: int,
+    db: Session = Depends(get_db),
+    current_user: AdminUser = Depends(require_roles(Role.ADMIN, Role.SUPERADMIN)),
+):
+    """Delete a gallery image from a product"""
+    product = db.query(Product).filter(Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    gallery = json.loads(product.gallery_images or "[]")
+    if image_index < 0 or image_index >= len(gallery):
+        raise HTTPException(status_code=400, detail="Invalid image index")
+
+    image_url = gallery.pop(image_index)
+
+    # Delete file if exists
+    try:
+        filepath = image_url.lstrip("/")
+        if os.path.exists(filepath):
+            os.remove(filepath)
+    except Exception:
+        pass
+
+    product.gallery_images = json.dumps(gallery)
+    product.updated_at = datetime.now(timezone.utc)
+    db.commit()
+
+    return {"success": True, "deleted": image_url}
 
 
 # ── ADMIN: SCRAPE URL ──

@@ -6,7 +6,7 @@
 <link rel="dns-prefetch" href="https://js.stripe.com">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title id="pageTitle">Strapeezzy — Pioneer Straps for the AP × Swatch Royalpop</title>
+<title id="pageTitle">Lidle-By-Lidle — Personal Shopper Store</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap&font-display=swap" rel="stylesheet">
 <script src="https://js.stripe.com/v3/" async></script>
 <style>
@@ -50,7 +50,9 @@ nav{
   border-bottom:2px solid var(--black);
 }
 .logo{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:3px;}
-.logo em{color:var(--pink);font-style:normal;}
+.logo .logo-pink{color:var(--pink);font-style:normal;}
+.logo .logo-teal{color:var(--teal);font-style:normal;}
+.logo .logo-yellow{color:var(--yellow);font-style:normal;}
 .nav-links{display:none;}
 @media(min-width:768px){
   nav{padding:0 48px;}
@@ -433,34 +435,34 @@ select.modal-input{-webkit-appearance:none;appearance:none;background-image:url(
 
 <!-- ── SITE HEADER (announcement + nav stacked, fixed together) ── -->
 <div class="site-header" id="siteHeader">
-  <div class="announcement" id="announcementBar">Free shipping on orders over $150 · Ships worldwide</div>
+  <div class="announcement" id="announcementBar">Welcome to Lidle-By-Lidle — Personal shopping made easy</div>
   <nav>
-    <div class="logo" id="logoContainer">stra<em>p</em></div>
+    <div class="logo" id="logoContainer"><span class="logo-pink">Li</span><span class="logo-teal">dl</span><span class="logo-yellow">e</span></div>
     <ul class="nav-links">
       <li><a href="#shop" id="navLink1">Shop</a></li>
-      <li><a href="#waitlist" id="navLink2">Waitlist</a></li>
+      <li><a href="#how-it-works" id="navLink2">How it works</a></li>
     </ul>
-    <button class="nav-btn" id="shopNavBtn" onclick="handleShopClick()">SHOP</button>
+    <button class="nav-btn" id="shopNavBtn" onclick="handleShopClick()">BROWSE</button>
   </nav>
 </div>
 
 <!-- ── HERO ── -->
 <section class="hero">
   <div class="hero-l">
-    <div class="hero-badge"><span></span><span id="heroBadge">NEW DROP</span></div>
-    <h1><span class="c1" id="heroLine1">STRAP</span> <span class="c2" id="heroLine2">YOUR</span> <span id="heroLine3">VIBE</span></h1>
-    <p class="hero-sub" id="heroSub">Premium Pioneer case-straps for the AP × Swatch Royalpop</p>
+    <div class="hero-badge"><span></span><span id="heroBadge">SHOP SMART</span></div>
+    <h1><span class="c1" id="heroLine1">LIDLE</span> <span class="c2" id="heroLine2">BY</span> <span id="heroLine3">LIDLE</span></h1>
+    <p class="hero-sub" id="heroSub">Your personal shopper marketplace. Buy premium products in easy instalments.</p>
     <div class="hero-cta">
-      <button class="btn-dark" id="heroShopBtn" onclick="scrollToShop()">Shop now</button>
-      <button class="btn-outline" id="heroJoinBtn" onclick="document.getElementById('waitlist').scrollIntoView({behavior:'smooth'})">Join waitlist</button>
+      <button class="btn-dark" id="heroShopBtn" onclick="scrollToShop()">Browse Deals</button>
+      <button class="btn-outline" id="heroJoinBtn" onclick="openSubmitOrderModal()">Submit Order</button>
     </div>
     <div class="hero-counter">
-      <strong id="waitlistCounter">0</strong> people on the waitlist
+      <strong id="productsCounter">0</strong> products available
     </div>
   </div>
   <div class="hero-r">
     <div class="hcp">
-      <img id="heroImg" src="images/img-0.jpg" loading="lazy" alt="Pioneer Strap">
+      <img id="heroImg" src="images/img-0.jpg" loading="lazy" alt="Featured Product">
       <div class="hcp-dots" id="hcpDots"></div>
     </div>
   </div>
@@ -485,16 +487,27 @@ select.modal-input{-webkit-appearance:none;appearance:none;background-image:url(
   </div>
 </section>
 
-<!-- ── WAITLIST ── -->
-<section style="padding:80px 24px;background:#f9f9f9;" id="waitlist">
-  <div style="max-width:480px;margin:0 auto;">
-    <h2 class="section-title" id="waitlistTitle">Join the Waitlist</h2>
-    <p style="color:#666;margin-bottom:20px;font-size:14px;line-height:1.6" id="waitlistMessage">Be the first to know when we launch. Get exclusive early-access pricing.</p>
-    <input type="email" id="wlEmail" placeholder="your@email.com" style="width:100%;padding:12px;border:1px solid #ddd;font-size:14px;margin-bottom:12px;">
-    <input type="text" id="wlName" placeholder="Your name" style="width:100%;padding:12px;border:1px solid #ddd;font-size:14px;margin-bottom:12px;">
-    <div id="feeSection"></div>
-    <button class="btn-dark" id="wlBtn" onclick="joinWaitlist()" style="width:100%;">Join Waitlist</button>
-    <div id="wlStatus"></div>
+<!-- ── HOW IT WORKS ── -->
+<section style="padding:80px 24px;background:#f9f9f9;" id="how-it-works">
+  <div style="max-width:800px;margin:0 auto;">
+    <h2 class="section-title" style="margin-bottom:40px;">How It Works</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:32px;text-align:center;">
+      <div>
+        <div style="font-size:48px;margin-bottom:16px;">🛍️</div>
+        <h3 style="font-family:'Bebas Neue',sans-serif;font-size:20px;margin-bottom:12px;letter-spacing:1px;">Browse or Submit</h3>
+        <p style="font-size:14px;color:#666;line-height:1.6;">Browse our curated deals or submit a product you'd like from any store.</p>
+      </div>
+      <div>
+        <div style="font-size:48px;margin-bottom:16px;">✅</div>
+        <h3 style="font-family:'Bebas Neue',sans-serif;font-size:20px;margin-bottom:12px;letter-spacing:1px;">Get Approved</h3>
+        <p style="font-size:14px;color:#666;line-height:1.6;">Our team reviews and approves your order, then sends you a payment link.</p>
+      </div>
+      <div>
+        <div style="font-size:48px;margin-bottom:16px;">💳</div>
+        <h3 style="font-family:'Bebas Neue',sans-serif;font-size:20px;margin-bottom:12px;letter-spacing:1px;">Pay in Instalments</h3>
+        <p style="font-size:14px;color:#666;line-height:1.6;">Choose from Klarna, Clearpay, or pay with your preferred payment method.</p>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -538,7 +551,40 @@ select.modal-input{-webkit-appearance:none;appearance:none;background-image:url(
   </div>
 </div>
 
-<!-- ── MODAL ── -->
+<!-- ── SUBMIT ORDER MODAL ── -->
+<div class="modal-bg" id="submitOrderBg" onclick="handleSubmitOrderBgClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Submit Order</div>
+      <button class="modal-close" onclick="closeSubmitOrderModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:#666;margin-bottom:20px;">Tell us about a product you'd like to purchase. Our team will review and send you a payment link.</p>
+      <label class="modal-label">Product Name *</label>
+      <input class="modal-input" type="text" id="submitProductName" placeholder="e.g., Nike Air Force 1 White" required>
+      <label class="modal-label">Brand *</label>
+      <input class="modal-input" type="text" id="submitBrand" placeholder="e.g., Nike" required>
+      <label class="modal-label">Store / Product Link *</label>
+      <input class="modal-input" type="url" id="submitProductLink" placeholder="https://..." required>
+      <label class="modal-label">Full Name *</label>
+      <input class="modal-input" type="text" id="submitFullName" placeholder="John Smith" autocomplete="name" required>
+      <div class="modal-row">
+        <div>
+          <label class="modal-label">Email *</label>
+          <input class="modal-input" type="email" id="submitEmail" placeholder="you@example.com" autocomplete="email" required>
+        </div>
+        <div>
+          <label class="modal-label">Phone *</label>
+          <input class="modal-input" type="tel" id="submitPhone" placeholder="+44 7911 123456" autocomplete="tel" required>
+        </div>
+      </div>
+      <div id="submitOrderError" style="color:#cc1c3a;font-size:13px;margin-bottom:16px;min-height:20px;"></div>
+      <button class="btn-dark" id="submitOrderBtn" onclick="submitOrder()" style="width:100%;">Submit Order</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── PAYMENT MODAL ── -->
 <div class="modal-bg" id="modalBg" onclick="handleBgClick(event)">
   <div class="modal">
     <div id="modalForm">
@@ -649,8 +695,13 @@ select.modal-input{-webkit-appearance:none;appearance:none;background-image:url(
     </div>
     <div id="paySuccess">
       <h3>Order Confirmed!</h3>
-      <p>Thank you for your Strapeezzy order. You'll receive a confirmation email shortly with tracking details.</p>
-      <button class="btn-dark" onclick="closeModal()" style="margin-top:8px">Back to Shop</button>
+      <p>Thank you for your order! You'll receive a confirmation email shortly with tracking details.</p>
+      <div id="trackingInfo" style="margin-top:16px;padding:16px;background:#F5F0E8;border-radius:4px;text-align:left">
+        <p style="font-size:12px;color:#666;margin-bottom:8px">Your order reference:</p>
+        <p style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;margin-bottom:12px" id="confirmOrderNumber">—</p>
+        <a href="#" id="trackingLink" style="display:inline-block;padding:8px 16px;background:var(--teal);color:var(--black);text-decoration:none;font-size:12px;font-weight:600;letter-spacing:1px;border-radius:4px">Track Order →</a>
+      </div>
+      <button class="btn-dark" onclick="closeModal()" style="margin-top:16px">Back to Shop</button>
     </div>
   </div>
 </div>
@@ -664,6 +715,7 @@ let currentProduct = {};
 let stripe, stripeElements, paymentElement;
 let heroIndex = 0;
 let heroTimer = null;
+let currentOrderNumber = "";
 
 // ── CURSOR ──
 (function() {
@@ -695,10 +747,6 @@ async function loadData() {
     if (configRes.ok) config = await configRes.json();
     if (productsRes.ok) products = await productsRes.json();
     if (heroRes.ok) heroImages = await heroRes.json();
-    if (countsRes.ok) {
-      const counts = await countsRes.json();
-      document.getElementById('waitlistCounter').textContent = counts.waitlist_count || '0';
-    }
 
     renderPage();
   } catch (err) {
@@ -785,9 +833,10 @@ function renderFeeSection() {
 
 // ── RENDER PRODUCTS ──
 function renderProducts() {
+  document.getElementById('productsCounter').textContent = products.length;
   const grid = document.getElementById('productGrid');
   if (!products.length) {
-    grid.innerHTML = '<div style="color:#999;">No products available</div>';
+    grid.innerHTML = '<div style="color:#999;">No products available yet. Try submitting an order!</div>';
     return;
   }
 
@@ -804,7 +853,7 @@ function renderProducts() {
           ${img2}
         </div>
         <div class="product-name">${p.name}</div>
-        <div class="product-colorway">${p.colorway || 'Pioneer'}</div>
+        <div class="product-colorway">${p.colorway || ''}</div>
         <div class="product-price">£${price}</div>
         <div class="bnpl-line">3x <strong>£${klarna}</strong> Klarna · 4x <strong>£${clearpay}</strong> Clearpay</div>
         <div class="card-actions" onclick="event.stopPropagation()">
@@ -925,15 +974,17 @@ function renderLogo() {
   const el = document.getElementById('logoContainer');
   if (!el) return;
   const type = config.logo_type || 'text';
-  const text = config.logo_text || 'strap';
+  const text = config.logo_text || 'lidle';
   const imgUrl = config.logo_image_url || '';
   if (type === 'image' && imgUrl) {
     el.innerHTML = `<img src="${imgUrl}" alt="Logo" style="height:40px;object-fit:contain;display:block;">`;
   } else {
-    const p = text.indexOf('p');
-    el.innerHTML = p >= 0
-      ? text.slice(0, p) + '<em>' + text[p] + '</em>' + text.slice(p + 1)
-      : text;
+    // 3-color logo: left (pink), middle (teal), right (yellow)
+    if (text.toLowerCase() === 'lidle') {
+      el.innerHTML = '<span class="logo-pink">Li</span><span class="logo-teal">dl</span><span class="logo-yellow">e</span>';
+    } else {
+      el.innerHTML = text;
+    }
   }
 }
 
@@ -1157,6 +1208,96 @@ async function handlePay() {
 function showSuccess() {
   document.getElementById('modalForm').style.display = 'none';
   document.getElementById('paySuccess').classList.add('show');
+
+  // Show tracking info if we have an order number
+  if (currentOrderNumber) {
+    document.getElementById('confirmOrderNumber').textContent = currentOrderNumber;
+    const trackingLink = document.getElementById('trackingLink');
+    trackingLink.href = `/order-tracking?order=${encodeURIComponent(currentOrderNumber)}`;
+    document.getElementById('trackingInfo').style.display = 'block';
+  }
+}
+
+// ── SUBMIT ORDER ──
+function openSubmitOrderModal() {
+  document.getElementById('submitOrderBg').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('submitOrderError').textContent = '';
+}
+
+function closeSubmitOrderModal() {
+  document.getElementById('submitOrderBg').classList.remove('open');
+  document.body.style.overflow = '';
+  document.getElementById('submitProductName').value = '';
+  document.getElementById('submitBrand').value = '';
+  document.getElementById('submitProductLink').value = '';
+  document.getElementById('submitFullName').value = '';
+  document.getElementById('submitEmail').value = '';
+  document.getElementById('submitPhone').value = '';
+}
+
+function handleSubmitOrderBgClick(e) {
+  if (e.target === document.getElementById('submitOrderBg')) closeSubmitOrderModal();
+}
+
+async function submitOrder() {
+  const name = document.getElementById('submitFullName').value.trim();
+  const email = document.getElementById('submitEmail').value.trim();
+  const phone = document.getElementById('submitPhone').value.trim();
+  const productName = document.getElementById('submitProductName').value.trim();
+  const brand = document.getElementById('submitBrand').value.trim();
+  const productLink = document.getElementById('submitProductLink').value.trim();
+  const errEl = document.getElementById('submitOrderError');
+
+  errEl.textContent = '';
+  if (!name || !email || !phone || !productName || !brand || !productLink) {
+    errEl.textContent = 'Please fill in all required fields.';
+    return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errEl.textContent = 'Please enter a valid email address.';
+    return;
+  }
+  if (!/^https?:\/\//.test(productLink)) {
+    errEl.textContent = 'Please enter a valid product link (starting with http or https).';
+    return;
+  }
+
+  const btn = document.getElementById('submitOrderBtn');
+  btn.disabled = true;
+  btn.textContent = 'Submitting…';
+
+  try {
+    const res = await fetch('/api/orders/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        product_name: productName,
+        product_brand: brand,
+        product_link: productLink,
+        customer_name: name,
+        customer_email: email,
+        customer_phone: phone,
+      })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      currentOrderNumber = data.order_number;
+      errEl.textContent = '✓ Order submitted! We'll review and send you a payment link soon.';
+      errEl.style.color = '#22a045';
+      closeSubmitOrderModal();
+      setTimeout(() => { document.getElementById('submitOrderBg').classList.remove('open'); }, 2000);
+    } else {
+      const err = await res.json().catch(() => ({}));
+      errEl.textContent = err.detail || 'Something went wrong. Please try again.';
+    }
+  } catch (err) {
+    errEl.textContent = 'Network error. Please check your connection and try again.';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Submit Order';
+  }
 }
 
 // ── WAITLIST ──

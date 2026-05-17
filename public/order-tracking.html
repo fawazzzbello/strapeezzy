@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Track Your Order - Lidle-By-Lidle</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --black: #0D0D0D;
+      --white: #FAFAF8;
+      --cream: #F5F0E8;
+      --yellow: #F5C600;
+      --pink: #E87CA0;
+      --teal: #4DCFC4;
+      --green: #22A045;
+    }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body {
+      height: 100%;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--black);
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding-bottom: 24px;
+      border-bottom: 2px solid var(--black);
+    }
+    .logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      letter-spacing: 3px;
+      margin-bottom: 12px;
+    }
+    .logo .pink { color: var(--pink); }
+    .logo .teal { color: var(--teal); }
+    .logo .yellow { color: var(--yellow); }
+    h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 32px;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+    p {
+      color: #666;
+      font-size: 14px;
+    }
+
+    .search-section {
+      background: var(--white);
+      border: 2px solid var(--black);
+      padding: 24px;
+      margin-bottom: 40px;
+    }
+    .search-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      color: #555;
+    }
+    .search-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 600px) {
+      .search-row {
+        grid-template-columns: 1fr;
+      }
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus {
+      border-color: var(--yellow);
+    }
+    button {
+      width: 100%;
+      background: var(--black);
+      color: var(--yellow);
+      border: none;
+      padding: 14px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 15px;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: var(--yellow);
+      color: var(--black);
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .tracking-section {
+      display: none;
+    }
+    .tracking-section.show {
+      display: block;
+    }
+
+    .order-header {
+      background: var(--white);
+      border: 2px solid var(--black);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .order-number {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 24px;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+    }
+    .order-detail {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+      font-size: 13px;
+    }
+    .order-detail:last-child {
+      border-bottom: none;
+    }
+    .order-detail strong {
+      color: #555;
+    }
+
+    .status-timeline {
+      background: var(--white);
+      border: 2px solid var(--black);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .timeline-item {
+      display: flex;
+      gap: 16px;
+      padding: 16px 0;
+      border-left: 3px solid #ddd;
+      padding-left: 16px;
+      position: relative;
+    }
+    .timeline-item.active {
+      border-left-color: var(--teal);
+    }
+    .timeline-item.completed {
+      border-left-color: var(--green);
+    }
+    .timeline-dot {
+      width: 12px;
+      height: 12px;
+      background: #ddd;
+      border-radius: 50%;
+      margin-top: 4px;
+      position: absolute;
+      left: -8px;
+      top: 16px;
+    }
+    .timeline-item.active .timeline-dot {
+      background: var(--teal);
+      width: 16px;
+      height: 16px;
+      left: -10px;
+      top: 14px;
+    }
+    .timeline-item.completed .timeline-dot {
+      background: var(--green);
+      width: 16px;
+      height: 16px;
+      left: -10px;
+      top: 14px;
+    }
+    .timeline-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #999;
+      margin-bottom: 4px;
+    }
+    .timeline-item.active .timeline-label,
+    .timeline-item.completed .timeline-label {
+      color: var(--black);
+    }
+    .timeline-status {
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .timeline-date {
+      font-size: 12px;
+      color: #999;
+      margin-top: 4px;
+    }
+
+    .shipping-info {
+      background: var(--white);
+      border: 2px solid var(--black);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .info-row {
+      margin-bottom: 16px;
+    }
+    .info-row:last-child {
+      margin-bottom: 0;
+    }
+    .info-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #555;
+      margin-bottom: 6px;
+    }
+    .info-value {
+      font-size: 14px;
+      color: var(--black);
+    }
+    .tracking-link {
+      color: var(--teal);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .tracking-link:hover {
+      text-decoration: underline;
+    }
+
+    .error-box {
+      background: #FEE2E2;
+      border: 2px solid #CC1C3A;
+      color: #CC1C3A;
+      padding: 16px;
+      margin-bottom: 24px;
+      display: none;
+      border-radius: 4px;
+    }
+    .error-box.show {
+      display: block;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 24px;
+      color: #999;
+    }
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #ddd;
+      border-top-color: var(--black);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-right: 8px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 24px;
+      padding: 12px 20px;
+      background: transparent;
+      border: 1px solid var(--black);
+      color: var(--black);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .back-link:hover {
+      background: var(--black);
+      color: var(--white);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo"><span class="pink">Li</span><span class="teal">dl</span><span class="yellow">e</span></div>
+      <h1>Track Your Order</h1>
+      <p>Check the status of your Lidle-By-Lidle order in real-time</p>
+    </header>
+
+    <div class="search-section">
+      <label class="search-label">Order Number</label>
+      <input type="text" id="orderNumber" placeholder="e.g., LBL-123456-ABC" autocomplete="off">
+
+      <label class="search-label" style="margin-top: 16px;">Email Address (optional)</label>
+      <input type="email" id="orderEmail" placeholder="your@email.com" autocomplete="email">
+
+      <button onclick="trackOrder()" style="margin-top: 16px;">Search Order</button>
+    </div>
+
+    <div class="error-box" id="errorBox"></div>
+
+    <div class="tracking-section" id="trackingSection">
+      <div class="order-header">
+        <div class="order-number" id="displayOrderNumber">—</div>
+        <div class="order-detail">
+          <span><strong>Customer:</strong> <span id="displayCustomer">—</span></span>
+        </div>
+        <div class="order-detail">
+          <span><strong>Product:</strong> <span id="displayProduct">—</span></span>
+        </div>
+        <div class="order-detail">
+          <span><strong>Total:</strong> <span id="displayTotal">—</span></span>
+        </div>
+        <div class="order-detail">
+          <span><strong>Ordered:</strong> <span id="displayDate">—</span></span>
+        </div>
+      </div>
+
+      <div class="status-timeline">
+        <div class="timeline">
+          <div class="timeline-item" id="step1">
+            <div class="timeline-dot"></div>
+            <div>
+              <div class="timeline-label">Step 1</div>
+              <div class="timeline-status">📋 Order Submitted</div>
+              <div class="timeline-date">Your order has been received</div>
+            </div>
+          </div>
+          <div class="timeline-item" id="step2">
+            <div class="timeline-dot"></div>
+            <div>
+              <div class="timeline-label">Step 2</div>
+              <div class="timeline-status">✅ Order Approved</div>
+              <div class="timeline-date">Payment link sent to your email</div>
+            </div>
+          </div>
+          <div class="timeline-item" id="step3">
+            <div class="timeline-dot"></div>
+            <div>
+              <div class="timeline-label">Step 3</div>
+              <div class="timeline-status">💳 Payment Complete</div>
+              <div class="timeline-date">Your payment has been processed</div>
+            </div>
+          </div>
+          <div class="timeline-item" id="step4">
+            <div class="timeline-dot"></div>
+            <div>
+              <div class="timeline-label">Step 4</div>
+              <div class="timeline-status" id="fulfillmentStatus">📦 Being Packed</div>
+              <div class="timeline-date" id="fulfillmentDate">We're preparing your order</div>
+            </div>
+          </div>
+          <div class="timeline-item" id="step5">
+            <div class="timeline-dot"></div>
+            <div>
+              <div class="timeline-label">Step 5</div>
+              <div class="timeline-status">🚚 On the Way</div>
+              <div class="timeline-date" id="shippedDate">—</div>
+            </div>
+          </div>
+          <div class="timeline-item" id="step6">
+            <div class="timeline-dot"></div>
+            <div>
+              <div class="timeline-label">Step 6</div>
+              <div class="timeline-status">✨ Delivered</div>
+              <div class="timeline-date" id="deliveredDate">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="shipping-info" id="shippingInfo" style="display: none;">
+        <div class="info-row">
+          <div class="info-label">Shipping Address</div>
+          <div class="info-value" id="displayAddress">—</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Tracking Number</div>
+          <div class="info-value">
+            <span id="displayTracking">—</span>
+            <span id="trackingCarrier"></span>
+            <a id="trackingLink" class="tracking-link" style="display: none; margin-left: 12px;">Track Shipment →</a>
+          </div>
+        </div>
+      </div>
+
+      <button class="back-link" onclick="resetForm()">← Search Another Order</button>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('order')) {
+      document.getElementById('orderNumber').value = params.get('order');
+      trackOrder();
+    }
+
+    async function trackOrder() {
+      const orderNumber = document.getElementById('orderNumber').value.trim();
+      const email = document.getElementById('orderEmail').value.trim();
+      const errorBox = document.getElementById('errorBox');
+
+      errorBox.classList.remove('show');
+      errorBox.textContent = '';
+
+      if (!orderNumber) {
+        errorBox.textContent = 'Please enter an order number';
+        errorBox.classList.add('show');
+        return;
+      }
+
+      const trackingSection = document.getElementById('trackingSection');
+      trackingSection.classList.remove('show');
+      trackingSection.innerHTML = '<div class="loading"><div class="spinner"></div>Loading order...</div>';
+      trackingSection.classList.add('show');
+
+      try {
+        const url = `/api/orders/track/${encodeURIComponent(orderNumber)}${email ? `?email=${encodeURIComponent(email)}` : ''}`;
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({ detail: 'Order not found' }));
+          throw new Error(error.detail || 'Could not retrieve order');
+        }
+
+        const order = await response.json();
+        displayOrder(order);
+      } catch (err) {
+        errorBox.textContent = err.message || 'An error occurred. Please try again.';
+        errorBox.classList.add('show');
+        trackingSection.classList.remove('show');
+      }
+    }
+
+    function displayOrder(order) {
+      document.getElementById('displayOrderNumber').textContent = order.order_number;
+      document.getElementById('displayCustomer').textContent = order.customer_name;
+      document.getElementById('displayProduct').textContent = `${order.product_name}${order.product_brand ? ` (${order.product_brand})` : ''}`;
+      document.getElementById('displayTotal').textContent = `£${(order.total_amount / 100).toFixed(2)}`;
+      document.getElementById('displayDate').textContent = new Date(order.created_at).toLocaleDateString();
+
+      // Update timeline based on status
+      updateTimeline(order.status, order.fulfillment_status, order);
+
+      // Show shipping info if available
+      if (order.tracking_number) {
+        document.getElementById('shippingInfo').style.display = 'block';
+        document.getElementById('displayAddress').textContent = order.shipping_address || '—';
+        document.getElementById('displayTracking').textContent = order.tracking_number;
+        if (order.tracking_carrier) {
+          document.getElementById('trackingCarrier').textContent = `(${order.tracking_carrier})`;
+        }
+        if (order.tracking_url) {
+          const link = document.getElementById('trackingLink');
+          link.href = order.tracking_url;
+          link.target = '_blank';
+          link.style.display = 'inline';
+        }
+      }
+    }
+
+    function updateTimeline(status, fulfillmentStatus, order) {
+      // Status steps
+      const statusMap = {
+        'pending_approval': 1,
+        'approved': 2,
+        'payment_pending': 2,
+        'paid': 3,
+        'cancelled': 0,
+      };
+
+      const currentStep = statusMap[status] || 1;
+
+      // Update status steps
+      for (let i = 1; i <= 3; i++) {
+        const step = document.getElementById(`step${i}`);
+        if (i < currentStep) {
+          step.classList.add('completed');
+          step.classList.remove('active');
+        } else if (i === currentStep) {
+          step.classList.add('active');
+          step.classList.remove('completed');
+        } else {
+          step.classList.remove('active', 'completed');
+        }
+      }
+
+      // Fulfillment steps start at step 4
+      const fulfillmentMap = {
+        'unfulfilled': 4,
+        'in_progress': 4,
+        'shipped': 5,
+        'delivered': 6,
+      };
+
+      const currentFulfillment = fulfillmentMap[fulfillmentStatus] || 4;
+
+      for (let i = 4; i <= 6; i++) {
+        const step = document.getElementById(`step${i}`);
+        if (i < currentFulfillment) {
+          step.classList.add('completed');
+          step.classList.remove('active');
+        } else if (i === currentFulfillment) {
+          step.classList.add('active');
+          step.classList.remove('completed');
+        } else {
+          step.classList.remove('active', 'completed');
+        }
+      }
+
+      // Update fulfillment details
+      if (order.shipped_at) {
+        document.getElementById('shippedDate').textContent = new Date(order.shipped_at).toLocaleDateString();
+      }
+      if (order.delivered_at) {
+        document.getElementById('deliveredDate').textContent = new Date(order.delivered_at).toLocaleDateString();
+      }
+    }
+
+    function resetForm() {
+      document.getElementById('orderNumber').value = '';
+      document.getElementById('orderEmail').value = '';
+      document.getElementById('errorBox').classList.remove('show');
+      document.getElementById('trackingSection').classList.remove('show');
+      window.history.replaceState({}, '', '/order-tracking');
+    }
+
+    // Allow Enter key to search
+    document.getElementById('orderNumber').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') trackOrder();
+    });
+  </script>
+</body>
+</html>
