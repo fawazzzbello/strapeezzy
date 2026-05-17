@@ -381,7 +381,7 @@ h1 .c2{color:var(--teal);}
   background:none;border:none;padding:0;
 }
 .back-link:hover{color:var(--black);}
-.modal-input textarea{resize:none;}
+select.modal-input{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23555' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;cursor:pointer;}
 #paySuccess{
   display:none;padding:40px 24px;text-align:center;
 }
@@ -528,8 +528,51 @@ h1 .c2{color:var(--teal);}
           </div>
           <label class="modal-label">Email Address</label>
           <input class="modal-input" type="email" id="emailInput" placeholder="your@email.com" autocomplete="email">
-          <label class="modal-label">Shipping / Delivery Address</label>
-          <textarea class="modal-input" id="addressInput" placeholder="123 High Street&#10;London, W1A 1AA&#10;United Kingdom" rows="3" style="resize:none;margin-bottom:16px"></textarea>
+          <label class="modal-label">Address Line 1</label>
+          <input class="modal-input" type="text" id="addrLine1" placeholder="123 High Street" autocomplete="address-line1">
+          <div class="modal-row">
+            <div>
+              <label class="modal-label">City</label>
+              <input class="modal-input" type="text" id="addrCity" placeholder="London" autocomplete="address-level2">
+            </div>
+            <div>
+              <label class="modal-label">Postal / ZIP Code</label>
+              <input class="modal-input" type="text" id="addrPostal" placeholder="W1A 1AA" autocomplete="postal-code">
+            </div>
+          </div>
+          <div class="modal-row">
+            <div>
+              <label class="modal-label">Country</label>
+              <select class="modal-input" id="addrCountry" autocomplete="country" onchange="toggleStateField()" style="margin-bottom:16px">
+                <option value="">— Select country —</option>
+                <option value="GB">United Kingdom</option>
+                <option value="US">United States</option>
+                <option value="AU">Australia</option>
+                <option value="CA">Canada</option>
+                <option value="DE">Germany</option>
+                <option value="FR">France</option>
+                <option value="NL">Netherlands</option>
+                <option value="SE">Sweden</option>
+                <option value="NO">Norway</option>
+                <option value="DK">Denmark</option>
+                <option value="CH">Switzerland</option>
+                <option value="AT">Austria</option>
+                <option value="BE">Belgium</option>
+                <option value="IT">Italy</option>
+                <option value="ES">Spain</option>
+                <option value="PT">Portugal</option>
+                <option value="IE">Ireland</option>
+                <option value="NZ">New Zealand</option>
+                <option value="SG">Singapore</option>
+                <option value="JP">Japan</option>
+                <option value="AE">UAE</option>
+              </select>
+            </div>
+            <div id="stateFieldWrap" style="display:none">
+              <label class="modal-label">State</label>
+              <input class="modal-input" type="text" id="addrState" placeholder="e.g. CA" autocomplete="address-level1">
+            </div>
+          </div>
           <div style="margin-bottom:18px">
             <div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#888;margin-bottom:8px">Accepted Payment Methods</div>
             <div class="pm-methods">
@@ -899,15 +942,34 @@ function initStripe() {
   }
 }
 
+function getShippingAddress() {
+  return {
+    line1: document.getElementById('addrLine1').value.trim(),
+    city: document.getElementById('addrCity').value.trim(),
+    postal_code: document.getElementById('addrPostal').value.trim(),
+    country: document.getElementById('addrCountry').value,
+    state: document.getElementById('addrState').value.trim() || undefined,
+  };
+}
+
+function toggleStateField() {
+  const country = document.getElementById('addrCountry').value;
+  document.getElementById('stateFieldWrap').style.display = country === 'US' ? '' : 'none';
+}
+
 async function continueToPayment() {
   const name = document.getElementById('fullNameInput').value.trim();
   const email = document.getElementById('emailInput').value.trim();
   const phone = document.getElementById('phoneInput').value.trim();
-  const address = document.getElementById('addressInput').value.trim();
+  const addr = getShippingAddress();
   const errEl = document.getElementById('step1-errors');
 
-  if (!name || !email || !phone || !address) {
+  if (!name || !email || !phone || !addr.line1 || !addr.city || !addr.postal_code || !addr.country) {
     errEl.textContent = 'Please fill in all fields to continue.';
+    return;
+  }
+  if (addr.country === 'US' && !addr.state) {
+    errEl.textContent = 'Please enter your state for US shipping.';
     return;
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -920,6 +982,8 @@ async function continueToPayment() {
   btn.disabled = true;
   btn.textContent = 'Loading payment…';
 
+  const shippingStr = [addr.line1, addr.city, addr.postal_code, addr.country, addr.state].filter(Boolean).join(', ');
+
   try {
     const res = await fetch('/api/stripe/create-payment-intent', {
       method: 'POST',
@@ -929,7 +993,7 @@ async function continueToPayment() {
         customer_email: email,
         customer_name: name,
         customer_phone: phone,
-        shipping_address: address,
+        shipping_address: shippingStr,
       })
     });
 
@@ -976,16 +1040,16 @@ async function handlePay() {
   const name = document.getElementById('fullNameInput').value.trim();
   const email = document.getElementById('emailInput').value.trim();
   const phone = document.getElementById('phoneInput').value.trim();
-  const address = document.getElementById('addressInput').value.trim();
+  const addr = getShippingAddress();
 
   try {
     const result = await stripe.confirmPayment({
       elements: stripeElements,
       confirmParams: {
         payment_method_data: {
-          billing_details: { name, email, phone }
+          billing_details: { name, email, phone, address: { line1: addr.line1, city: addr.city, postal_code: addr.postal_code, country: addr.country, state: addr.state || '' } }
         },
-        shipping: { name, address: { line1: address } },
+        shipping: { name, address: addr },
         return_url: window.location.href,
       },
       redirect: 'if_required',
