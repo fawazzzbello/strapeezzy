@@ -104,12 +104,14 @@ from app.routes.waitlist import router as waitlist_router
 from app.routes.orders import router as orders_router
 from app.routes.admin_routes import router as admin_router
 from app.routes.stripe_routes import router as stripe_router
+from app.routes.products import router as products_router
 
 app.include_router(auth_router)
 app.include_router(waitlist_router)
 app.include_router(orders_router)
 app.include_router(admin_router)
 app.include_router(stripe_router)
+app.include_router(products_router)
 
 
 # ── STRIPE WEBHOOK (raw body) ──
@@ -175,6 +177,9 @@ import pathlib
 PUBLIC_DIR = pathlib.Path(__file__).parent / "public"
 ADMIN_DIR = pathlib.Path(__file__).parent / "admin"
 
+# Mount static files (images, CSS, JS)
+if (PUBLIC_DIR / "images").exists():
+    app.mount("/images", StaticFiles(directory=str(PUBLIC_DIR / "images")), name="images")
 
 @app.get("/admin", include_in_schema=False)
 @app.get("/admin/{path:path}", include_in_schema=False)
