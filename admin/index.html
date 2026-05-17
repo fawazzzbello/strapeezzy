@@ -113,7 +113,14 @@ tr:last-child td{border-bottom:none;}
 .tab.active{color:var(--black);border-bottom-color:var(--yellow);}
 .empty{padding:48px;text-align:center;color:var(--muted);}
 .empty-icon{font-size:40px;margin-bottom:12px;}
-@media(max-width:768px){.sidebar{display:none;}.form-grid{grid-template-columns:1fr;}.stat-grid{grid-template-columns:repeat(2,1fr);}.main{padding:16px;}}
+.img-upload-zone{border:2px dashed var(--border);padding:20px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:8px;position:relative;}
+.img-upload-zone:hover,.img-upload-zone.drag{border-color:var(--yellow);background:#fffbea;}
+.img-upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.img-upload-zone .zone-label{font-size:12px;color:var(--muted);pointer-events:none;}
+.img-upload-zone .zone-label strong{display:block;font-size:13px;color:var(--text);margin-bottom:4px;}
+.img-preview{width:100%;max-height:160px;object-fit:cover;border:2px solid var(--black);margin-bottom:8px;display:none;}
+.img-url-toggle{font-size:11px;color:var(--muted);cursor:pointer;text-decoration:underline;margin-bottom:8px;display:inline-block;}
+
 </style>
 </head>
 <body>
@@ -211,49 +218,121 @@ async function createUser(){const body={username:document.getElementById('nu_use
 function openManualOrder(){document.getElementById('orderModalTitle').textContent='Create Manual Order';document.getElementById('orderModalBody').innerHTML=`<div class="form-grid"><div class="form-field"><label class="form-label">Name</label><input class="form-input" id="mo_name"></div><div class="form-field"><label class="form-label">Email</label><input class="form-input" id="mo_email" type="email"></div><div class="form-field"><label class="form-label">Phone</label><input class="form-input" id="mo_phone"></div><div class="form-field"><label class="form-label">Product</label><select class="form-select" id="mo_product"><option>OTG ROZ</option><option>Otto Rosso</option><option>Green Eight</option><option>Huit Blanc</option><option>Blaue Acht</option><option>Ocho Negro</option><option>Lan Ba</option><option>Orenji Hachi</option></select></div><div class="form-field"><label class="form-label">Price (cents)</label><input class="form-input" id="mo_price" value="7900"></div><div class="form-field"><label class="form-label">Qty</label><input class="form-input" id="mo_qty" type="number" value="1" min="1"></div></div><div class="form-field"><label class="form-label">Shipping Address</label><textarea class="form-textarea" id="mo_address" rows="3"></textarea></div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px"><button class="btn btn-ghost btn-sm" onclick="document.getElementById('orderModal').classList.remove('open')">Cancel</button><button class="btn btn-primary btn-sm" onclick="saveManualOrder()">Create & Email Customer</button></div>`;document.getElementById('orderModal').classList.add('open');}
 async function saveManualOrder(){const body={customer_name:document.getElementById('mo_name').value,customer_email:document.getElementById('mo_email').value,customer_phone:document.getElementById('mo_phone').value,product_name:document.getElementById('mo_product').value,quantity:document.getElementById('mo_qty').value,unit_price:document.getElementById('mo_price').value,shipping_address:document.getElementById('mo_address').value};const res=await apiFetch('/api/orders/manual',{method:'POST',body:JSON.stringify(body)});if(res.success){toast('Manual order created');document.getElementById('orderModal').classList.remove('open');loadOrders();}else toast(res.error||'Error','error');}
 async function renderProducts(){const products=await apiFetch('/api/products/admin/all');document.getElementById('mainContent').innerHTML=`<div class="page-header"><div><div class="page-title">Products</div><div class="page-subtitle">${products.length||0} total</div></div><button class="btn btn-primary btn-sm" onclick="openAddProduct()">+ Add Product</button></div><div class="card"><div class="tbl-wrap"><table><thead><tr><th>SKU</th><th>Name</th><th>Price</th><th>Colorway</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead><tbody>${(products||[]).map(p=>`<tr><td><code style="font-size:11px">${p.sku}</code></td><td><strong>${p.name}</strong></td><td>$${(p.price_cents/100).toFixed(2)}</td><td>${p.colorway||'—'}</td><td>${p.stock_quantity}</td><td><span class="badge ${p.is_active?'badge-green':'badge-gray'}">${p.is_active?'Active':'Inactive'}</span></td><td><button class="btn btn-sm" style="background:var(--yellow);color:var(--black)" onclick="editProduct(${p.id})">Edit</button> <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id},this)">Delete</button></td></tr>`).join('')||'<tr><td colspan="7"><div class="empty"><div class="empty-icon">📭</div><p>No products. Create one to get started!</p></div></td></tr>'}</tbody></table></div></div>`;}
-function openAddProduct(){document.getElementById('orderModalTitle').textContent='Add Product';document.getElementById('orderModalBody').innerHTML=`<div class="form-grid"><div class="form-field"><label class="form-label">SKU</label><input class="form-input" id="ap_sku" placeholder="e.g., OTG-001"></div><div class="form-field"><label class="form-label">Name</label><input class="form-input" id="ap_name" placeholder="e.g., OTG ROZ"></div><div class="form-field"><label class="form-label">Colorway</label><input class="form-input" id="ap_colorway" placeholder="Pink / Yellow"></div><div class="form-field"><label class="form-label">Price ($)</label><input class="form-input" id="ap_price" type="number" placeholder="79.00" step="0.01"></div><div class="form-field"><label class="form-label">Stock</label><input class="form-input" id="ap_stock" type="number" value="100" min="0"></div><div class="form-field"><label class="form-label">Image URL</label><input class="form-input" id="ap_image" placeholder="/images/img-0.jpg"></div></div><div class="form-field"><label class="form-label">Description</label><textarea class="form-textarea" id="ap_desc" rows="2"></textarea></div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px"><button class="btn btn-ghost btn-sm" onclick="document.getElementById('orderModal').classList.remove('open')">Cancel</button><button class="btn btn-primary btn-sm" onclick="saveProduct()">Create Product</button></div>`;document.getElementById('orderModal').classList.add('open');}
-async function saveProduct(){const sku=document.getElementById('ap_sku').value.trim();const name=document.getElementById('ap_name').value.trim();const colorway=document.getElementById('ap_colorway').value.trim();const price=parseFloat(document.getElementById('ap_price').value)*100;const stock=parseInt(document.getElementById('ap_stock').value);const image=document.getElementById('ap_image').value.trim();const desc=document.getElementById('ap_desc').value.trim();if(!sku||!name||!price){toast('SKU, Name, and Price required','error');return;}const fd=new FormData();fd.append('sku',sku);fd.append('name',name);fd.append('colorway',colorway);fd.append('price_cents',price);fd.append('stock_quantity',stock);fd.append('image_url',image);fd.append('description',desc);const res=await fetch('/api/products/admin',{method:'POST',headers:{'Authorization':'Bearer '+TOKEN},body:fd});const data=await res.json();if(res.ok){toast('Product created ✅');document.getElementById('orderModal').classList.remove('open');renderProducts();}else{toast(data.detail||'Error','error');}}
+function bindUploadZone(zoneId,fileId,previewId){
+  const zone=document.getElementById(zoneId);
+  const input=document.getElementById(fileId);
+  const preview=document.getElementById(previewId);
+  if(!zone||!input)return;
+  ['dragenter','dragover'].forEach(e=>zone.addEventListener(e,ev=>{ev.preventDefault();zone.classList.add('drag');}));
+  ['dragleave','drop'].forEach(e=>zone.addEventListener(e,ev=>{ev.preventDefault();zone.classList.remove('drag');}));
+  zone.addEventListener('drop',ev=>{if(ev.dataTransfer.files[0])previewFile(ev.dataTransfer.files[0],preview,input);});
+  input.addEventListener('change',()=>{if(input.files[0])previewFile(input.files[0],preview,input);});
+}
+function previewFile(file,preview,input){
+  if(!file.type.startsWith('image/')){toast('Please select an image file','error');return;}
+  const dt=new DataTransfer();dt.items.add(file);input.files=dt.files;
+  const reader=new FileReader();
+  reader.onload=e=>{preview.src=e.target.result;preview.style.display='block';};
+  reader.readAsDataURL(file);
+}
+function openAddProduct(){
+  document.getElementById('orderModalTitle').textContent='Add Product';
+  document.getElementById('orderModalBody').innerHTML=`
+    <div class="form-grid">
+      <div class="form-field"><label class="form-label">SKU</label><input class="form-input" id="ap_sku" placeholder="e.g., SZCS-MYWATCH"></div>
+      <div class="form-field"><label class="form-label">Name</label><input class="form-input" id="ap_name" placeholder="e.g., OTG ROZ"></div>
+      <div class="form-field"><label class="form-label">Colorway</label><input class="form-input" id="ap_colorway" placeholder="Pink / Teal / Yellow"></div>
+      <div class="form-field"><label class="form-label">Price ($)</label><input class="form-input" id="ap_price" type="number" placeholder="150.00" step="0.01"></div>
+      <div class="form-field"><label class="form-label">Stock</label><input class="form-input" id="ap_stock" type="number" value="50" min="0"></div>
+    </div>
+    <div class="form-field">
+      <label class="form-label">Product Image</label>
+      <img id="ap_preview" class="img-preview" alt="Preview">
+      <div class="img-upload-zone" id="ap_zone">
+        <input type="file" id="ap_file" accept="image/*">
+        <div class="zone-label"><strong>Click or drag & drop an image</strong>JPG, PNG, WebP · max 10 MB</div>
+      </div>
+      <span class="img-url-toggle" onclick="document.getElementById('ap_url_row').style.display=document.getElementById('ap_url_row').style.display==='none'?'block':'none'">or enter image URL instead</span>
+      <div id="ap_url_row" style="display:none;margin-top:6px"><input class="form-input" id="ap_image" placeholder="/images/orenji-hachi.jpg"></div>
+    </div>
+    <div class="form-field"><label class="form-label">Description</label><textarea class="form-textarea" id="ap_desc" rows="3" placeholder="Describe the case-strap..."></textarea></div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('orderModal').classList.remove('open')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="saveProduct()">Create Product</button>
+    </div>`;
+  document.getElementById('orderModal').classList.add('open');
+  bindUploadZone('ap_zone','ap_file','ap_preview');
+}
+async function saveProduct(){
+  const sku=document.getElementById('ap_sku').value.trim();
+  const name=document.getElementById('ap_name').value.trim();
+  const price=parseFloat(document.getElementById('ap_price').value)*100;
+  if(!sku||!name||!price){toast('SKU, Name, and Price required','error');return;}
+  const fd=new FormData();
+  fd.append('sku',sku);
+  fd.append('name',name);
+  fd.append('colorway',document.getElementById('ap_colorway').value.trim());
+  fd.append('price_cents',price);
+  fd.append('stock_quantity',document.getElementById('ap_stock').value);
+  fd.append('description',document.getElementById('ap_desc').value.trim());
+  const fileInput=document.getElementById('ap_file');
+  if(fileInput.files[0]){fd.append('file',fileInput.files[0]);}
+  else{const url=document.getElementById('ap_image')?.value.trim();if(url)fd.append('image_url',url);}
+  const res=await fetch('/api/products/admin',{method:'POST',headers:{'Authorization':'Bearer '+TOKEN},body:fd});
+  const data=await res.json();
+  if(res.ok){toast('Product created ✅');document.getElementById('orderModal').classList.remove('open');renderProducts();}
+  else toast(data.detail||'Error','error');
+}
 async function editProduct(id){
   const p=await apiFetch('/api/products/'+id);
   if(p.error){toast('Failed to load product','error');return;}
-  document.getElementById('orderModalTitle').textContent='Edit Product';
+  document.getElementById('orderModalTitle').textContent='Edit — '+p.name;
   document.getElementById('orderModalBody').innerHTML=`
     <input type="hidden" id="ep_id" value="${p.id}">
     <div class="form-grid">
-      <div class="form-field"><label class="form-label">SKU</label><input class="form-input" id="ep_sku" value="${p.sku}" disabled style="opacity:.5;cursor:not-allowed"></div>
+      <div class="form-field"><label class="form-label">SKU</label><input class="form-input" value="${p.sku}" disabled style="opacity:.5;cursor:not-allowed"></div>
       <div class="form-field"><label class="form-label">Name</label><input class="form-input" id="ep_name" value="${p.name||''}"></div>
       <div class="form-field"><label class="form-label">Colorway</label><input class="form-input" id="ep_colorway" value="${p.colorway||''}"></div>
       <div class="form-field"><label class="form-label">Price ($)</label><input class="form-input" id="ep_price" type="number" step="0.01" value="${(p.price_cents/100).toFixed(2)}"></div>
       <div class="form-field"><label class="form-label">Stock</label><input class="form-input" id="ep_stock" type="number" min="0" value="${p.stock_quantity}"></div>
-      <div class="form-field"><label class="form-label">Image URL</label><input class="form-input" id="ep_image" value="${p.image_url||''}" placeholder="/images/img-0.jpg"></div>
+      <div class="form-field">
+        <label class="form-label">Status</label>
+        <select class="form-select" id="ep_active">
+          <option value="true" ${p.is_active?'selected':''}>Active</option>
+          <option value="false" ${!p.is_active?'selected':''}>Inactive</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-field">
+      <label class="form-label">Product Image</label>
+      <img id="ep_preview" class="img-preview" src="${p.image_url||''}" alt="Preview" style="${p.image_url?'display:block':'display:none'}">
+      <div class="img-upload-zone" id="ep_zone">
+        <input type="file" id="ep_file" accept="image/*">
+        <div class="zone-label"><strong>${p.image_url?'Replace image — click or drag & drop':'Click or drag & drop an image'}</strong>JPG, PNG, WebP · max 10 MB</div>
+      </div>
+      <span class="img-url-toggle" onclick="document.getElementById('ep_url_row').style.display=document.getElementById('ep_url_row').style.display==='none'?'block':'none'">or enter image URL instead</span>
+      <div id="ep_url_row" style="display:none;margin-top:6px"><input class="form-input" id="ep_image" value="${p.image_url||''}" placeholder="/images/otg-roz.jpg"></div>
     </div>
     <div class="form-field"><label class="form-label">Description</label><textarea class="form-textarea" id="ep_desc" rows="4">${p.description||''}</textarea></div>
-    <div class="form-field">
-      <label class="form-label">Status</label>
-      <select class="form-select" id="ep_active">
-        <option value="true" ${p.is_active?'selected':''}>Active</option>
-        <option value="false" ${!p.is_active?'selected':''}>Inactive</option>
-      </select>
-    </div>
-    ${p.image_url?`<div style="margin-bottom:16px"><img src="${p.image_url}" style="height:120px;object-fit:cover;border:2px solid var(--black)"></div>`:''}
     <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
       <button class="btn btn-ghost btn-sm" onclick="document.getElementById('orderModal').classList.remove('open')">Cancel</button>
       <button class="btn btn-primary btn-sm" onclick="saveEditProduct()">Save Changes</button>
     </div>`;
   document.getElementById('orderModal').classList.add('open');
+  bindUploadZone('ep_zone','ep_file','ep_preview');
 }
 async function saveEditProduct(){
   const id=document.getElementById('ep_id').value;
-  const price=Math.round(parseFloat(document.getElementById('ep_price').value)*100);
   const fd=new FormData();
   fd.append('name',document.getElementById('ep_name').value.trim());
   fd.append('colorway',document.getElementById('ep_colorway').value.trim());
-  fd.append('price_cents',price);
+  fd.append('price_cents',Math.round(parseFloat(document.getElementById('ep_price').value)*100));
   fd.append('stock_quantity',document.getElementById('ep_stock').value);
   fd.append('description',document.getElementById('ep_desc').value.trim());
   fd.append('is_active',document.getElementById('ep_active').value==='true');
-  const imageVal=document.getElementById('ep_image').value.trim();
-  if(imageVal)fd.append('image_url',imageVal);
+  const fileInput=document.getElementById('ep_file');
+  if(fileInput.files[0]){fd.append('file',fileInput.files[0]);}
+  else{const url=document.getElementById('ep_image')?.value.trim();if(url)fd.append('image_url',url);}
   const res=await fetch('/api/products/admin/'+id,{method:'PATCH',headers:{'Authorization':'Bearer '+TOKEN},body:fd});
   const data=await res.json();
   if(res.ok){toast('Product updated ✅');document.getElementById('orderModal').classList.remove('open');renderProducts();}
