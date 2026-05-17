@@ -206,6 +206,16 @@ class ConfigUpdate(BaseModel):
     logo_type: Optional[str] = None
     logo_text: Optional[str] = None
     logo_image_url: Optional[str] = None
+    hero_badge: Optional[str] = None
+    hero_cta1_text: Optional[str] = None
+    hero_cta2_text: Optional[str] = None
+    nav_btn_text: Optional[str] = None
+    nav_link1_text: Optional[str] = None
+    nav_link2_text: Optional[str] = None
+    products_title: Optional[str] = None
+    waitlist_title: Optional[str] = None
+    waitlist_description: Optional[str] = None
+    waitlist_btn_text: Optional[str] = None
 
 
 # ── PAYMENT ──

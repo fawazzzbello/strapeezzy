@@ -47,6 +47,11 @@ def seed_db():
             "announcement_bar": "Free shipping on orders over £150 · Ships worldwide",
             "announcement_active": "1", "waitlist_active": "1", "store_active": "1", "sms_notifications": "1", "waitlist_fee": "0",
             "hero_slide_interval": "1000", "logo_type": "text", "logo_text": "strap", "logo_image_url": "",
+            "hero_badge": "NEW DROP", "hero_cta1_text": "Shop now", "hero_cta2_text": "Join waitlist",
+            "nav_btn_text": "SHOP", "nav_link1_text": "SHOP", "nav_link2_text": "WAITLIST",
+            "products_title": "Eight Colorways", "waitlist_title": "Join the Waitlist",
+            "waitlist_description": "Be the first to know when we launch. Get exclusive early-access pricing.",
+            "waitlist_btn_text": "Join Waitlist",
         }
         for key, value in defaults.items():
             if not db.query(SiteConfig).filter(SiteConfig.key == key).first():

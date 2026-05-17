@@ -96,6 +96,16 @@ DEFAULT_CONFIG = {
     "logo_type": "text",
     "logo_text": "strap",
     "logo_image_url": "",
+    "hero_badge": "NEW DROP",
+    "hero_cta1_text": "Shop now",
+    "hero_cta2_text": "Join waitlist",
+    "nav_btn_text": "SHOP",
+    "nav_link1_text": "SHOP",
+    "nav_link2_text": "WAITLIST",
+    "products_title": "Eight Colorways",
+    "waitlist_title": "Join the Waitlist",
+    "waitlist_description": "Be the first to know when we launch. Get exclusive early-access pricing.",
+    "waitlist_btn_text": "Join Waitlist",
 }
 
 
@@ -140,6 +150,16 @@ async def get_config_public(db: Session = Depends(get_db)):
         "logo_type": cfg.get("logo_type", "text"),
         "logo_text": cfg.get("logo_text", "strap"),
         "logo_image_url": cfg.get("logo_image_url", ""),
+        "hero_badge": cfg.get("hero_badge", "NEW DROP"),
+        "hero_cta1_text": cfg.get("hero_cta1_text", "Shop now"),
+        "hero_cta2_text": cfg.get("hero_cta2_text", "Join waitlist"),
+        "nav_btn_text": cfg.get("nav_btn_text", "SHOP"),
+        "nav_link1_text": cfg.get("nav_link1_text", "SHOP"),
+        "nav_link2_text": cfg.get("nav_link2_text", "WAITLIST"),
+        "products_title": cfg.get("products_title", "Eight Colorways"),
+        "waitlist_title": cfg.get("waitlist_title", "Join the Waitlist"),
+        "waitlist_description": cfg.get("waitlist_description", "Be the first to know when we launch. Get exclusive early-access pricing."),
+        "waitlist_btn_text": cfg.get("waitlist_btn_text", "Join Waitlist"),
     }
 
 
