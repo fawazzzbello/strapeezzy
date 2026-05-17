@@ -342,7 +342,7 @@ async def upload_image(
 ):
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
-    safe_name = file.filename.replace(" ", "-").split("/")[-1]
+    safe_name = os.path.basename(file.filename.replace("\\", "/")).replace(" ", "-")
     filename = f"upload-{int(datetime.now().timestamp())}-{safe_name}"
     filepath = os.path.join(UPLOAD_DIR, filename)
     try:
