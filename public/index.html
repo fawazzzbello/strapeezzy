@@ -244,14 +244,14 @@ h1 .c2{color:var(--teal);}
 #card-errors{
   color:#cc1c3a;font-size:13px;margin-bottom:16px;
 }
-#payBtn{
+#payBtn, .waitlist-join-btn{
   width:100%;background:var(--black);color:var(--yellow);
   padding:14px;font-family:'Bebas Neue',sans-serif;
   font-size:15px;letter-spacing:1.5px;
   transition:background .2s;
 }
-#payBtn:hover:not(:disabled){background:var(--yellow);color:var(--black);}
-#payBtn:disabled{opacity:0.6;cursor:not-allowed;}
+#payBtn:hover:not(:disabled), .waitlist-join-btn:hover:not(:disabled){background:var(--yellow);color:var(--black);}
+#payBtn:disabled, .waitlist-join-btn:disabled{opacity:0.6;cursor:not-allowed;}
 .stripe-badge{
   font-size:12px;color:#777;margin-top:12px;text-align:center;
 }
@@ -266,6 +266,10 @@ h1 .c2{color:var(--teal);}
 #paySuccess p{font-size:14px;color:#777;margin-bottom:20px;}
 #modalForm{display:block;}
 #modalForm.hidden{display:none;}
+.fee-notice{
+  background:#f0f0f0;padding:12px;border-left:3px solid var(--yellow);
+  font-size:13px;color:#555;margin-bottom:16px;
+}
 </style>
 </head>
 <body>
@@ -282,7 +286,7 @@ h1 .c2{color:var(--teal);}
     <li><a href="#shop">Shop</a></li>
     <li><a href="#waitlist">Waitlist</a></li>
   </ul>
-  <button class="nav-btn" onclick="document.querySelector('.modal-bg').classList.add('open')">shop</button>
+  <button class="nav-btn" id="shopNavBtn" onclick="handleShopClick()">shop</button>
 </nav>
 
 <!-- ── HERO ── -->
@@ -292,7 +296,7 @@ h1 .c2{color:var(--teal);}
     <h1><span class="c1" id="heroLine1">STRAP</span> <span class="c2" id="heroLine2">YOUR</span> <span id="heroLine3">VIBE</span></h1>
     <p class="hero-sub" id="heroSub">Premium Pioneer case-straps for the AP × Swatch Royalpop</p>
     <div class="hero-cta">
-      <button class="btn-dark" onclick="document.getElementById('shop').scrollIntoView({behavior:'smooth'})">Shop now</button>
+      <button class="btn-dark" id="heroShopBtn" onclick="scrollToShop()">Shop now</button>
       <button class="btn-outline" onclick="document.getElementById('waitlist').scrollIntoView({behavior:'smooth'})">Join waitlist</button>
     </div>
     <div class="hero-counter">
@@ -308,7 +312,7 @@ h1 .c2{color:var(--teal);}
 </section>
 
 <!-- ── PRODUCTS ── -->
-<section class="products" id="shop">
+<section class="products" id="shop" style="display:none">
   <h2 class="section-title">Eight Colorways</h2>
   <div class="product-grid" id="productGrid">
     <div style="text-align:center;color:#999;">Loading products...</div>
@@ -319,9 +323,11 @@ h1 .c2{color:var(--teal);}
 <section style="padding:80px 24px;background:#f9f9f9;" id="waitlist">
   <div style="max-width:480px;margin:0 auto;">
     <h2 class="section-title">Join the Waitlist</h2>
+    <p style="color:#666;margin-bottom:20px;font-size:14px;line-height:1.6" id="waitlistMessage">Be the first to know when we launch. Get exclusive early-access pricing.</p>
     <input type="email" id="wlEmail" placeholder="your@email.com" style="width:100%;padding:12px;border:1px solid #ddd;font-size:14px;margin-bottom:12px;">
     <input type="text" id="wlName" placeholder="Your name" style="width:100%;padding:12px;border:1px solid #ddd;font-size:14px;margin-bottom:12px;">
-    <button class="btn-dark" onclick="joinWaitlist()" style="width:100%;">Join</button>
+    <div id="feeSection"></div>
+    <button class="btn-dark" onclick="joinWaitlist()" style="width:100%;">Join Waitlist</button>
   </div>
 </section>
 
@@ -341,7 +347,7 @@ h1 .c2{color:var(--teal);}
           <div class="modal-product-price" id="modalPrice">$79</div>
         </div>
       </div>
-      <div class="modal-body">
+      <div class="modal-body" id="paymentBody">
         <label class="modal-label">Email</label>
         <input class="modal-input" type="email" id="emailInput" placeholder="your@email.com" autocomplete="email">
         <label class="modal-label">Name on card</label>
@@ -349,7 +355,7 @@ h1 .c2{color:var(--teal);}
         <label class="modal-label">Card details</label>
         <div id="card-element"></div>
         <div id="card-errors"></div>
-        <button id="payBtn" class="stripe-badge" onclick="handlePay()">Pay Securely</button>
+        <button id="payBtn" onclick="handlePay()">Pay Securely</button>
         <div class="stripe-badge">
           <span class="stripe-lock">🔒</span> Powered by <strong>Stripe</strong>
         </div>
@@ -410,7 +416,45 @@ function renderPage() {
     announcementBar.classList.add('hidden');
   }
 
-  // Render products
+  // Check if waitlist is active
+  const isWaitlistActive = config.waitlist_active === '1';
+  const isStoreActive = config.store_active === '1';
+
+  // Show products section only if store is active
+  const shopSection = document.getElementById('shop');
+  if (isStoreActive && !isWaitlistActive) {
+    shopSection.style.display = 'block';
+    renderProducts();
+  } else {
+    shopSection.style.display = 'none';
+  }
+
+  // Update waitlist message
+  if (isWaitlistActive) {
+    document.getElementById('waitlistMessage').textContent = 'Pre-order access coming soon. Join the waitlist for early access and exclusive pricing.';
+  }
+
+  // Render fee section
+  renderFeeSection();
+}
+
+function renderFeeSection() {
+  const feeSection = document.getElementById('feeSection');
+  const isWaitlistActive = config.waitlist_active === '1';
+
+  if (isWaitlistActive && config.waitlist_fee === '1') {
+    feeSection.innerHTML = `
+      <div class="fee-notice">
+        💳 Waitlist reservation: $9.90 (refundable when you purchase)
+      </div>
+    `;
+  } else {
+    feeSection.innerHTML = '';
+  }
+}
+
+// ── RENDER PRODUCTS ──
+function renderProducts() {
   const grid = document.getElementById('productGrid');
   if (!products.length) {
     grid.innerHTML = '<div style="color:#999;">No products available</div>';
@@ -454,6 +498,14 @@ function changeHeroImage(i) {
 
 // ── MODAL ──
 function openModal(productId) {
+  const isWaitlistActive = config.waitlist_active === '1';
+
+  // If waitlist is active, don't open modal
+  if (isWaitlistActive) {
+    alert('Store is in waitlist mode. Please join the waitlist for pre-order access.');
+    return;
+  }
+
   const product = products.find(p => p.id == productId);
   if (!product) return;
 
@@ -483,6 +535,21 @@ function closeModal() {
 
 function handleBgClick(e) {
   if (e.target === document.getElementById('modalBg')) closeModal();
+}
+
+function handleShopClick() {
+  const isWaitlistActive = config.waitlist_active === '1';
+  const isStoreActive = config.store_active === '1';
+
+  if (isStoreActive && !isWaitlistActive) {
+    scrollToShop();
+  } else {
+    document.getElementById('waitlist').scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+function scrollToShop() {
+  document.getElementById('shop').scrollIntoView({ behavior: 'smooth' });
 }
 
 // ── STRIPE ──
@@ -571,6 +638,16 @@ async function joinWaitlist() {
     return;
   }
 
+  const isWaitlistActive = config.waitlist_active === '1';
+  const hasWaitlistFee = config.waitlist_fee === '1';
+
+  if (isWaitlistActive && hasWaitlistFee) {
+    // Charge 10% fee for waitlist
+    alert('Redirecting to payment for waitlist reservation fee...');
+    // In a real implementation, this would process the 10% payment
+    // For now, just add to waitlist
+  }
+
   try {
     const res = await fetch('/api/waitlist/join', {
       method: 'POST',
@@ -609,11 +686,6 @@ async function init() {
     if (e.key === 'Escape') closeModal();
   });
 }
-
-// Close modal on Escape key
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeModal();
-});
 
 // Load on ready
 if (document.readyState === 'loading') {
