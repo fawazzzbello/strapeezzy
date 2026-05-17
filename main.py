@@ -52,103 +52,155 @@ def seed_db():
                 db.add(SiteConfig(key=key, value=value))
         db.commit()
 
-        if db.query(Product).count() == 0:
-            products_seed = [
-                {
-                    "sku": "RPPOP-LIME",
-                    "name": "Royal Pop Lime Frost",
-                    "description": "Bioceramic case in acid lime with a contrasting sky-blue octagonal bezel. The lime dial features a classic Petit Tapisserie pattern with ice-blue baton indices. Paired with a matching lime rubber strap, this colorway is built for those who refuse to go unnoticed.",
-                    "price_cents": 7900,
-                    "colorway": "Lime / Sky Blue",
-                    "image_url": "/images/img-0.jpg",
-                    "stock_quantity": 48,
-                },
-                {
-                    "sku": "RPPOP-FORET",
-                    "name": "Royal Pop Forêt Verte",
-                    "description": "A monochromatic study in green. Case, bezel, dial, and strap all rendered in the same bold forest green bioceramic. Luminous green hands disappear into the dial until the light catches them just right. Pure, intentional, unapologetic.",
-                    "price_cents": 7900,
-                    "colorway": "All Green",
-                    "image_url": "/images/img-1.jpg",
-                    "stock_quantity": 35,
-                },
-                {
-                    "sku": "RPPOP-CONFETTI",
-                    "name": "Royal Pop Confetti",
-                    "description": "White bioceramic case and strap anchor a riot of rainbow colour. Eight multicoloured screws on the bezel, multicoloured baton indices, and a teal second hand make every glance a celebration. The only watch that brings the party with it.",
-                    "price_cents": 7900,
-                    "colorway": "White / Rainbow",
-                    "image_url": "/images/img-2.jpg",
-                    "stock_quantity": 60,
-                },
-                {
-                    "sku": "RPPOP-CIEL",
-                    "name": "Royal Pop Ciel Nocturne",
-                    "description": "Powder-blue case and strap cradle a deep navy dial with white baton indices. A small seconds sub-dial adds a dressy touch. Understated in daylight, striking after dark.",
-                    "price_cents": 7900,
-                    "colorway": "Baby Blue / Navy",
-                    "image_url": "/images/img-3.jpg",
-                    "stock_quantity": 42,
-                },
-                {
-                    "sku": "RPPOP-ONYX",
-                    "name": "Royal Pop Onyx Blanc",
-                    "description": "Matte black bioceramic case and strap with a stark white octagonal bezel. The black dial with white indices channels the stark geometry of the original Royal Oak. The most serious colorway in the lineup — and the most versatile.",
-                    "price_cents": 7900,
-                    "colorway": "Black / White",
-                    "image_url": "/images/img-4.jpg",
-                    "stock_quantity": 55,
-                },
-                {
-                    "sku": "RPPOP-CARNIVAL-PW",
-                    "name": "Royal Pop Carnival Pocket",
-                    "description": "Pocket watch format in teal, yellow, and pink — three colours that have no business looking this good together. The teal Petit Tapisserie dial features a pink small-seconds and yellow baton markers. The open caseback reveals the movement decorated with graphic Royal Pop artwork. Worn on a braided pink cord.",
-                    "price_cents": 24900,
-                    "colorway": "Teal / Yellow / Pink",
-                    "image_url": "/images/img-5.jpg",
-                    "stock_quantity": 20,
-                },
-                {
-                    "sku": "RPPOP-ROSE-PW",
-                    "name": "Royal Pop Rose Quartz Pocket",
-                    "description": "Pocket watch in blush pink and crimson. The soft pink dial with matching indices sits behind a bold crimson bezel. The display caseback shows the movement under a Royal Pop graphic in matching pink tones. Suspended from a braided blush leather cord.",
-                    "price_cents": 24900,
-                    "colorway": "Blush Pink / Crimson",
-                    "image_url": "/images/img-6.jpg",
-                    "stock_quantity": 18,
-                },
-                {
-                    "sku": "RPPOP-NAUTILUS",
-                    "name": "Royal Pop Nautilus",
-                    "description": "Navy bioceramic case, bezel, and strap with eight vivid orange octagonal screws. The navy dial features orange baton indices and orange hands that pop against the deep blue. Inspired by deep-sea precision instruments, this is the sports colorway of the collection.",
-                    "price_cents": 7900,
-                    "colorway": "Navy / Orange",
-                    "image_url": "/images/img-7.jpg",
-                    "stock_quantity": 38,
-                },
-                {
-                    "sku": "RPPOP-TROPICANA",
-                    "name": "Royal Pop Tropicana",
-                    "description": "Yellow strap and case meet a candy-pink middle band and bezel. The turquoise-teal dial is anchored by a pink small-seconds counter with yellow hand. A tri-colour collision that captures poolside energy at its most unfiltered.",
-                    "price_cents": 7900,
-                    "colorway": "Yellow / Pink / Teal",
-                    "image_url": "/images/img-8.jpg",
-                    "stock_quantity": 30,
-                },
-                {
-                    "sku": "RPPOP-FLAMINGO",
-                    "name": "Royal Pop Flamingo",
-                    "description": "Blush-pink bioceramic case and strap with a hot-pink octagonal bezel. The blush dial features matching pink indices and a crimson seconds hand. Feminine without being soft, bold without being loud. The most requested colorway before launch.",
-                    "price_cents": 7900,
-                    "colorway": "Blush / Hot Pink",
-                    "image_url": "/images/img-9.jpg",
-                    "stock_quantity": 45,
-                },
-            ]
-            for pd in products_seed:
+        # Upsert the canonical 8 Delugs Royal Pop products by SKU
+        canonical_skus = {
+            "SZCS-BLAUEACHT", "SZCS-GREENEIGHT", "SZCS-HUITBLANC",
+            "SZCS-LANBA", "SZCS-OCHONEGRO", "SZCS-OTGROZ",
+            "SZCS-OTTOROSSO", "SZCS-ORENJIHACHI",
+        }
+        products_seed = [
+            {
+                "sku": "SZCS-OTGROZ",
+                "name": "OTG ROZ",
+                "description": (
+                    "The OTG ROZ — Romanian for 'pink eight' — is the pink Savonnette in the "
+                    "AP × Swatch Royal Pop. Its teal Grande Tapisserie dial, yellow octagonal bezel, "
+                    "and baby-pink bioceramic case make it the most colour-forward piece in the collection. "
+                    "Our Pioneer case-strap rotates the crown to roughly 2 o'clock for natural wrist "
+                    "orientation while keeping the small-seconds subdial at 9 fully readable. "
+                    "Compatible with Savonnette layout (crown at 3). Hand-wound Sistem51, 90hr power reserve."
+                ),
+                "price_cents": 15000,
+                "colorway": "Pink / Teal / Yellow",
+                "image_url": "/images/otg-roz.jpg",
+                "stock_quantity": 25,
+            },
+            {
+                "sku": "SZCS-OTTOROSSO",
+                "name": "Otto Rosso",
+                "description": (
+                    "The Otto Rosso — Italian for 'red eight' — brings Royal Oak DNA in a palette "
+                    "that splits the difference between salmon-dial collector lore and bold Pop Art colour. "
+                    "The blush-pink Grande Tapisserie dial sits behind a crimson octagonal bezel and a "
+                    "matching red bioceramic Savonnette case. Our Pioneer case-strap turns this pocket "
+                    "watch into a wrist-ready driver's watch. Compatible with Savonnette layout (crown at 3). "
+                    "Hand-wound Sistem51, 90hr power reserve."
+                ),
+                "price_cents": 15000,
+                "colorway": "Red / Salmon Pink",
+                "image_url": "/images/otto-rosso.jpg",
+                "stock_quantity": 22,
+            },
+            {
+                "sku": "SZCS-GREENEIGHT",
+                "name": "Green Eight",
+                "description": (
+                    "Green Eight is the Royal Pop in full monochrome — case, bezel, dial rendered in the "
+                    "same bold forest green bioceramic. Luminous green hands disappear into the dial until "
+                    "the light catches them just right. Our Pioneer case-strap completes the look with a "
+                    "matching forest green rubber, turning the six-Lépine pocket watch into a statement "
+                    "wristwatch. Compatible with Lépine layout (crown at 12). Hand-wound Sistem51, 90hr power reserve."
+                ),
+                "price_cents": 15000,
+                "colorway": "All Green",
+                "image_url": "/images/green-eight.jpg",
+                "stock_quantity": 40,
+            },
+            {
+                "sku": "SZCS-HUITBLANC",
+                "name": "Huit Blanc",
+                "description": (
+                    "Huit Blanc — French for 'white eight' — runs a clean white bioceramic case against "
+                    "eight multicoloured bezel screws, one for each colorway in the collection. The Grand "
+                    "Tapisserie dial in white adds texture without noise. Our Pioneer case-strap in matching "
+                    "white rubber lets each rainbow screw do the talking. "
+                    "Compatible with Lépine layout (crown at 12). Hand-wound Sistem51, 90hr power reserve."
+                ),
+                "price_cents": 15000,
+                "colorway": "White / Rainbow",
+                "image_url": "/images/huit-blanc.jpg",
+                "stock_quantity": 35,
+            },
+            {
+                "sku": "SZCS-BLAUEACHT",
+                "name": "Blaue Acht",
+                "description": (
+                    "Blaue Acht — German for 'blue eight' — contradicts itself in the best way: the watch "
+                    "reads lime-green-and-sky rather than classic blue, making it the most surprising "
+                    "colorway in the lineup. The pale teal bezel against the acid-lime bioceramic case "
+                    "shouldn't work. It absolutely does. Our Pioneer case-strap leans into the contrast "
+                    "with a lime rubber. Compatible with Lépine layout (crown at 12). "
+                    "Hand-wound Sistem51, 90hr power reserve."
+                ),
+                "price_cents": 15000,
+                "colorway": "Lime / Sky Blue",
+                "image_url": "/images/blaue-acht.jpg",
+                "stock_quantity": 30,
+            },
+            {
+                "sku": "SZCS-OCHONEGRO",
+                "name": "Ocho Negro",
+                "description": (
+                    "Ocho Negro — Spanish for 'black eight' — is the straight man of the lineup. Matte "
+                    "black bioceramic case, stark white octagonal bezel, black Grande Tapisserie dial with "
+                    "white indices. The contrast between inky black and creamy white is almost unexpectedly "
+                    "elegant for a Pop Art watch. Our Pioneer case-strap in matte black rubber makes this "
+                    "the most wearable Royal Pop of all eight. Compatible with Lépine layout (crown at 12). "
+                    "Hand-wound Sistem51, 90hr power reserve."
+                ),
+                "price_cents": 15000,
+                "colorway": "Black / White",
+                "image_url": "/images/ocho-negro.jpg",
+                "stock_quantity": 50,
+            },
+            {
+                "sku": "SZCS-LANBA",
+                "name": "Lan Ba",
+                "description": (
+                    "Lan Ba — Chinese for 'blue eight' (蓝八) — pairs powder-blue bioceramic with a deep "
+                    "navy Grande Tapisserie dial. The small seconds subdial at 9 o'clock adds a classical "
+                    "touch to an otherwise very contemporary palette. Our Pioneer case-strap in powder-blue "
+                    "rubber lets the navy dial take centre stage. Compatible with Savonnette layout (crown at 3). "
+                    "Hand-wound Sistem51, 90hr power reserve."
+                ),
+                "price_cents": 15000,
+                "colorway": "Baby Blue / Navy",
+                "image_url": "/images/lan-ba.jpg",
+                "stock_quantity": 28,
+            },
+            {
+                "sku": "SZCS-ORENJIHACHI",
+                "name": "Orenji Hachi",
+                "description": (
+                    "Orenji Hachi — Japanese for 'orange eight' (オレンジ八) — is the sports model of the "
+                    "Royal Pop. Deep navy bioceramic meets eight vivid orange bezel screws and orange baton "
+                    "indices on an all-navy dial. The most striking contrast in the collection and the one "
+                    "most at home on an active wrist. Our Pioneer case-strap pairs navy rubber with orange "
+                    "accent stitching to match. Compatible with Lépine layout (crown at 12). "
+                    "Hand-wound Sistem51, 90hr power reserve."
+                ),
+                "price_cents": 15000,
+                "colorway": "Navy / Orange",
+                "image_url": "/images/orenji-hachi.jpg",
+                "stock_quantity": 32,
+            },
+        ]
+        # Deactivate any products not in the canonical set
+        db.query(Product).filter(Product.sku.notin_(canonical_skus)).update(
+            {"is_active": False}, synchronize_session=False
+        )
+        # Upsert canonical products
+        for pd in products_seed:
+            existing = db.query(Product).filter(Product.sku == pd["sku"]).first()
+            if existing:
+                for k, v in pd.items():
+                    if k != "sku":
+                        setattr(existing, k, v)
+                existing.is_active = True
+            else:
                 db.add(Product(**pd))
-            db.commit()
-            print(f"✅ {len(products_seed)} products seeded")
+        db.commit()
+        print("✅ 8 Royal Pop products upserted")
 
         print("✅ DB seeded")
     except Exception as e:
