@@ -11,7 +11,7 @@ from sqlalchemy import func, and_
 
 from app.models.database import get_db, Order, ActivityLog, AdminUser, Role
 from app.models.schemas import (
-    OrderCreate, FulfillmentUpdate, OrderStatusUpdate, OrderOut, OrderStats
+    OrderSubmit, OrderCreate, FulfillmentUpdate, OrderStatusUpdate, OrderOut, OrderStats
 )
 from app.middleware.auth import get_current_user, require_roles, require_superadmin
 from app.services.notifications import (
@@ -25,27 +25,19 @@ router = APIRouter(prefix="/api/orders", tags=["orders"])
 # ── PUBLIC: SUBMIT ORDER ──
 @router.post("/submit", status_code=201, include_in_schema=True)
 async def submit_order(
-    product_name: str,
-    product_brand: str,
-    product_link: str,
-    customer_name: str,
-    customer_email: str,
-    customer_phone: str,
+    body: OrderSubmit,
     db: Session = Depends(get_db),
 ):
     """Public endpoint for buyers to submit an order for approval."""
-    if not all([product_name, product_brand, product_link, customer_name, customer_email, customer_phone]):
-        raise HTTPException(400, "All fields are required")
-
     order_number = generate_order_number()
     o = Order(
         order_number=order_number,
-        customer_name=customer_name,
-        customer_email=customer_email,
-        customer_phone=customer_phone,
-        product_name=product_name,
-        product_brand=product_brand,
-        product_link=product_link,
+        customer_name=body.customer_name,
+        customer_email=body.customer_email,
+        customer_phone=body.customer_phone,
+        product_name=body.product_name,
+        product_brand=body.product_brand,
+        product_link=body.product_link,
         quantity=1,
         unit_price=0,
         total_amount=0,
