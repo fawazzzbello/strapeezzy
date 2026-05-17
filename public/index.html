@@ -159,17 +159,18 @@ h1 .c2{color:var(--teal);}
   .announcement{padding:14px 48px;font-size:14px;}
 }
 
-/* ── PRODUCTS ── */
+/* ── PRODUCTS / BROWSE DEALS ── */
 .products{
-  padding:80px 24px;
+  padding:0;
 }
 @media(min-width:768px){
-  .products{padding:120px 48px;}
+  .products{padding:0;}
 }
 .section-title{
   font-family:'Bebas Neue',sans-serif;
   font-size:clamp(32px,6vw,56px);
-  margin-bottom:40px;
+  margin-bottom:24px;
+  letter-spacing:2px;
 }
 .product-grid{
   display:grid;
@@ -479,11 +480,30 @@ select.modal-input{-webkit-appearance:none;appearance:none;background-image:url(
   </div>
 </div>
 
-<!-- ── PRODUCTS ── -->
-<section class="products" id="shop" style="display:none">
-  <h2 class="section-title" id="productsSectionTitle">Eight Colorways</h2>
-  <div class="product-grid" id="productGrid">
-    <div style="text-align:center;color:#999;">Loading products...</div>
+<!-- ── BROWSE DEALS ── -->
+<section class="products" id="shop" style="display:none;background:#FAFAF8">
+  <div style="max-width:1200px;margin:0 auto;padding:80px 24px">
+    <h2 class="section-title" id="productsSectionTitle">Browse Deals</h2>
+    <p style="font-size:14px;color:#666;margin-bottom:32px;max-width:600px">Discover our curated collection of premium products available in easy instalments. No interest. No hidden fees.</p>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;flex-wrap:wrap;gap:12px;">
+      <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:250px;">
+        <span style="font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#666">Search:</span>
+        <input type="text" id="productSearch" placeholder="Search by name or brand..." style="flex:1;padding:8px 12px;border:1px solid #ddd;font-size:13px;outline:none;border-radius:4px;" onkeyup="filterProducts()">
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#666">Sort:</span>
+        <select id="productSort" onchange="filterProducts()" style="padding:8px 12px;border:1px solid #ddd;font-size:13px;outline:none;border-radius:4px;cursor:pointer;">
+          <option value="newest">Newest First</option>
+          <option value="price-low">Price: Low to High</option>
+          <option value="price-high">Price: High to Low</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="product-grid" id="productGrid">
+      <div style="text-align:center;color:#999;">Loading products...</div>
+    </div>
   </div>
 </section>
 
@@ -834,17 +854,53 @@ function renderFeeSection() {
 // ── RENDER PRODUCTS ──
 function renderProducts() {
   document.getElementById('productsCounter').textContent = products.length;
+  filterProducts();
+
+  // Create hero carousel dots — use heroImages if configured, else product images
+  const slideCount = heroImages.length || Math.min(products.length, 8);
+  const dots = document.getElementById('hcpDots');
+  dots.innerHTML = Array.from({length: slideCount}, (_, i) =>
+    `<div class="hcp-dot ${i === 0 ? 'active' : ''}" data-i="${i}" onclick="changeHeroImage(${i})"
+         style="background:${getRandomColor()}"></div>`
+  ).join('');
+  if (slideCount > 0) changeHeroImage(0);
+}
+
+function filterProducts() {
+  const searchTerm = (document.getElementById('productSearch')?.value || '').toLowerCase();
+  const sortBy = document.getElementById('productSort')?.value || 'newest';
   const grid = document.getElementById('productGrid');
+
   if (!products.length) {
     grid.innerHTML = '<div style="color:#999;">No products available yet. Try submitting an order!</div>';
     return;
   }
 
-  grid.innerHTML = products.map((p, i) => {
+  // Filter products
+  let filtered = products.filter(p => {
+    const name = (p.name || '').toLowerCase();
+    const colorway = (p.colorway || '').toLowerCase();
+    return name.includes(searchTerm) || colorway.includes(searchTerm);
+  });
+
+  // Sort products
+  if (sortBy === 'price-low') {
+    filtered.sort((a, b) => a.price_cents - b.price_cents);
+  } else if (sortBy === 'price-high') {
+    filtered.sort((a, b) => b.price_cents - a.price_cents);
+  }
+  // 'newest' is default (array order)
+
+  if (!filtered.length) {
+    grid.innerHTML = '<div style="color:#999;">No products match your search.</div>';
+    return;
+  }
+
+  grid.innerHTML = filtered.map((p, i) => {
     const price = (p.price_cents / 100).toFixed(2);
     const klarna = (p.price_cents / 3 / 100).toFixed(2);
     const clearpay = (p.price_cents / 4 / 100).toFixed(2);
-    const imgSrc = p.image_url || `images/img-${i}.jpg`;
+    const imgSrc = p.image_url || `images/img-${products.indexOf(p)}.jpg`;
     const img2 = p.image_url_2 ? `<img src="${p.image_url_2}" alt="${p.name}" class="product-img product-img-2" loading="lazy">` : '';
     return `
       <div class="product-card" onclick="openDetail(${p.id})">
@@ -863,15 +919,6 @@ function renderProducts() {
       </div>
     `;
   }).join('');
-
-  // Create hero carousel dots — use heroImages if configured, else product images
-  const slideCount = heroImages.length || Math.min(products.length, 8);
-  const dots = document.getElementById('hcpDots');
-  dots.innerHTML = Array.from({length: slideCount}, (_, i) =>
-    `<div class="hcp-dot ${i === 0 ? 'active' : ''}" data-i="${i}" onclick="changeHeroImage(${i})"
-         style="background:${getRandomColor()}"></div>`
-  ).join('');
-  if (slideCount > 0) changeHeroImage(0);
 }
 
 // ── PRODUCT DETAIL ──
@@ -1062,7 +1109,10 @@ function handleShopClick() {
 }
 
 function scrollToShop() {
-  document.getElementById('shop').scrollIntoView({ behavior: 'smooth' });
+  const shopSection = document.getElementById('shop');
+  if (shopSection && shopSection.style.display !== 'none') {
+    shopSection.scrollIntoView({ behavior: 'smooth' });
+  }
 }
 
 // ── STRIPE ──
