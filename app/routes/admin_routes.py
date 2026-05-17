@@ -166,6 +166,6 @@ async def send_campaign(
     return {
         "success": True,
         "campaign_id": campaign_id,
-        "recipient_count": len(snap),
+        "recipientCount": len(snap),
         "message": f"Campaign started — sending to {len(snap)} subscribers in background",
     }

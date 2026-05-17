@@ -139,6 +139,21 @@ class EmailCampaign(Base):
     created_at = Column(DateTime(timezone=True), default=utcnow)
 
 
+class Product(Base):
+    __tablename__ = "products"
+    id = Column(Integer, primary_key=True, index=True)
+    sku = Column(String(64), unique=True, nullable=False, index=True)
+    name = Column(String(256), nullable=False)
+    description = Column(Text, nullable=True)
+    price_cents = Column(Integer, nullable=False)
+    image_url = Column(String(512), nullable=True)
+    colorway = Column(String(128), nullable=True)
+    stock_quantity = Column(Integer, default=0)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), default=utcnow)
+    updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
 # ── DB SESSION ──
 from sqlalchemy.orm import sessionmaker
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
