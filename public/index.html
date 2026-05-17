@@ -437,22 +437,22 @@ select.modal-input{-webkit-appearance:none;appearance:none;background-image:url(
   <nav>
     <div class="logo" id="logoContainer">stra<em>p</em></div>
     <ul class="nav-links">
-      <li><a href="#shop">Shop</a></li>
-      <li><a href="#waitlist">Waitlist</a></li>
+      <li><a href="#shop" id="navLink1">Shop</a></li>
+      <li><a href="#waitlist" id="navLink2">Waitlist</a></li>
     </ul>
-    <button class="nav-btn" id="shopNavBtn" onclick="handleShopClick()">shop</button>
+    <button class="nav-btn" id="shopNavBtn" onclick="handleShopClick()">SHOP</button>
   </nav>
 </div>
 
 <!-- ── HERO ── -->
 <section class="hero">
   <div class="hero-l">
-    <div class="hero-badge"><span></span>NEW DROP</div>
+    <div class="hero-badge"><span></span><span id="heroBadge">NEW DROP</span></div>
     <h1><span class="c1" id="heroLine1">STRAP</span> <span class="c2" id="heroLine2">YOUR</span> <span id="heroLine3">VIBE</span></h1>
     <p class="hero-sub" id="heroSub">Premium Pioneer case-straps for the AP × Swatch Royalpop</p>
     <div class="hero-cta">
       <button class="btn-dark" id="heroShopBtn" onclick="scrollToShop()">Shop now</button>
-      <button class="btn-outline" onclick="document.getElementById('waitlist').scrollIntoView({behavior:'smooth'})">Join waitlist</button>
+      <button class="btn-outline" id="heroJoinBtn" onclick="document.getElementById('waitlist').scrollIntoView({behavior:'smooth'})">Join waitlist</button>
     </div>
     <div class="hero-counter">
       <strong id="waitlistCounter">0</strong> people on the waitlist
@@ -479,7 +479,7 @@ select.modal-input{-webkit-appearance:none;appearance:none;background-image:url(
 
 <!-- ── PRODUCTS ── -->
 <section class="products" id="shop" style="display:none">
-  <h2 class="section-title">Eight Colorways</h2>
+  <h2 class="section-title" id="productsSectionTitle">Eight Colorways</h2>
   <div class="product-grid" id="productGrid">
     <div style="text-align:center;color:#999;">Loading products...</div>
   </div>
@@ -488,7 +488,7 @@ select.modal-input{-webkit-appearance:none;appearance:none;background-image:url(
 <!-- ── WAITLIST ── -->
 <section style="padding:80px 24px;background:#f9f9f9;" id="waitlist">
   <div style="max-width:480px;margin:0 auto;">
-    <h2 class="section-title">Join the Waitlist</h2>
+    <h2 class="section-title" id="waitlistTitle">Join the Waitlist</h2>
     <p style="color:#666;margin-bottom:20px;font-size:14px;line-height:1.6" id="waitlistMessage">Be the first to know when we launch. Get exclusive early-access pricing.</p>
     <input type="email" id="wlEmail" placeholder="your@email.com" style="width:100%;padding:12px;border:1px solid #ddd;font-size:14px;margin-bottom:12px;">
     <input type="text" id="wlName" placeholder="Your name" style="width:100%;padding:12px;border:1px solid #ddd;font-size:14px;margin-bottom:12px;">
@@ -711,6 +711,16 @@ function renderPage() {
   document.getElementById('heroLine2').textContent = config.hero_headline_line2 || 'YOUR';
   document.getElementById('heroLine3').textContent = config.hero_headline_line3 || 'VIBE';
   document.getElementById('heroSub').textContent = config.hero_subtitle || '';
+  if (config.hero_badge) document.getElementById('heroBadge').textContent = config.hero_badge;
+  if (config.hero_cta1_text) document.getElementById('heroShopBtn').textContent = config.hero_cta1_text;
+  if (config.hero_cta2_text) document.getElementById('heroJoinBtn').textContent = config.hero_cta2_text;
+  if (config.nav_btn_text) document.getElementById('shopNavBtn').textContent = config.nav_btn_text;
+  if (config.nav_link1_text) document.getElementById('navLink1').textContent = config.nav_link1_text;
+  if (config.nav_link2_text) document.getElementById('navLink2').textContent = config.nav_link2_text;
+  if (config.products_title) document.getElementById('productsSectionTitle').textContent = config.products_title;
+  if (config.waitlist_title) document.getElementById('waitlistTitle').textContent = config.waitlist_title;
+  if (config.waitlist_description) document.getElementById('waitlistMessage').textContent = config.waitlist_description;
+  if (config.waitlist_btn_text) document.getElementById('wlBtn').textContent = config.waitlist_btn_text;
 
   // Update announcement — hide only if explicitly disabled
   const announcementBar = document.getElementById('announcementBar');
@@ -744,9 +754,11 @@ function renderPage() {
     if (bnplBar) bnplBar.style.display = 'none';
   }
 
-  // Update waitlist message
-  if (isWaitlistActive) {
-    document.getElementById('waitlistMessage').textContent = 'Pre-order access coming soon. Join the waitlist for early access and exclusive pricing.';
+  // Waitlist message: use custom description from config, or fallback per mode
+  if (!config.waitlist_description) {
+    document.getElementById('waitlistMessage').textContent = isWaitlistActive
+      ? 'Pre-order access coming soon. Join the waitlist for early access and exclusive pricing.'
+      : 'Be the first to know when we launch. Get exclusive early-access pricing.';
   }
 
   // Render fee section

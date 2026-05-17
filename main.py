@@ -47,6 +47,11 @@ def seed_db():
             "announcement_bar": "Free shipping on orders over £150 · Ships worldwide",
             "announcement_active": "1", "waitlist_active": "1", "store_active": "1", "sms_notifications": "1", "waitlist_fee": "0",
             "hero_slide_interval": "1000", "logo_type": "text", "logo_text": "strap", "logo_image_url": "",
+            "hero_badge": "NEW DROP", "hero_cta1_text": "Shop now", "hero_cta2_text": "Join waitlist",
+            "nav_btn_text": "SHOP", "nav_link1_text": "SHOP", "nav_link2_text": "WAITLIST",
+            "products_title": "Eight Colorways", "waitlist_title": "Join the Waitlist",
+            "waitlist_description": "Be the first to know when we launch. Get exclusive early-access pricing.",
+            "waitlist_btn_text": "Join Waitlist",
         }
         for key, value in defaults.items():
             if not db.query(SiteConfig).filter(SiteConfig.key == key).first():
@@ -186,22 +191,30 @@ def seed_db():
                 "stock_quantity": 32,
             },
         ]
-        # Deactivate any products not in the canonical set
-        db.query(Product).filter(Product.sku.notin_(canonical_skus)).update(
-            {"is_active": False}, synchronize_session=False
-        )
-        # Upsert canonical products
+        # Deactivate non-canonical products (e.g. test products) without deleting them
+        non_canonical = db.query(Product).filter(
+            Product.sku.notin_(canonical_skus), Product.is_active == True
+        ).count()
+        if non_canonical:
+            db.query(Product).filter(Product.sku.notin_(canonical_skus)).update(
+                {"is_active": False}, synchronize_session=False
+            )
+        # Seed canonical products — INSERT new SKUs only.
+        # Existing products are never overwritten so admin edits to
+        # price_cents, stock_quantity, and is_active survive restarts.
+        # Only content fields (name, description, colorway, images) are
+        # refreshed on existing rows so copy updates propagate automatically.
+        CONTENT_FIELDS = {"name", "description", "colorway", "image_url", "image_url_2"}
         for pd in products_seed:
             existing = db.query(Product).filter(Product.sku == pd["sku"]).first()
             if existing:
                 for k, v in pd.items():
-                    if k != "sku":
+                    if k in CONTENT_FIELDS:
                         setattr(existing, k, v)
-                existing.is_active = True
             else:
                 db.add(Product(**pd))
         db.commit()
-        print("✅ 8 Royal Pop products upserted")
+        print("✅ 8 Royal Pop products seeded (existing prices/stock preserved)")
 
         print("✅ DB seeded")
     except Exception as e:
